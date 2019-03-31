@@ -4,8 +4,8 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -20,7 +20,7 @@ import java.util.List;
  * DrawView class holds corner objects and handle them by drawing
  * overlay.
  *
- * @author Chintan Rathod (http://chintanrathod.com)
+ * Based on solution by Chintan Rathod (http://chintanrathod.com)
  */
 public class DrawView extends View {
     private Logger LOGGER = new Logger(DrawView.class.getName());
@@ -144,6 +144,8 @@ public class DrawView extends View {
         }
     }
 
+    private int prevX;
+    private int prevY;
     // events when touching the screen
     public boolean onTouchEvent(MotionEvent event) {
         int eventaction = event.getAction();
@@ -151,11 +153,16 @@ public class DrawView extends View {
         int X = (int) event.getX();
         int Y = (int) event.getY();
 
+        LOGGER.i(X + " " + Y);
+
         switch (eventaction) {
 
             case MotionEvent.ACTION_DOWN:
                 // touch down so check if the finger is on
                 // a ball
+
+                prevX = X;
+                prevY = Y;
                 balID = -1;
                 groupId = -1;
                 boolean isAlreadySelected = false;
@@ -164,15 +171,15 @@ public class DrawView extends View {
                     for (ColorBall ball : rectangle.getColorballs()) {
                         // check if inside the bounds of the ball (circle)
                         // get the center for the ball
-                        int centerX = ball.getX() + ball.getWidthOfBall();
-                        int centerY = ball.getY() + ball.getHeightOfBall();
+                        int centerX = ball.getX() + ball.getWidthOfBall()/2;
+                        int centerY = ball.getY() + ball.getHeightOfBall()/2;
                         // calculate the radius from the touch to the center of the ball
                         double radCircle = Math.sqrt((double) (((centerX - X) * (centerX - X)) + (centerY - Y) * (centerY - Y)));
 
                         if (radCircle < ball.getWidthOfBall()) {
                             isAlreadySelected = true;
                             rectangle.setSelected(true);
-                            LOGGER.i("BALL TOUCHED, BALL ID " + ball.getID());
+                            LOGGER.i("BALL TOUCHED " + centerX + " " + centerY);
                             balID = ball.getID();
                             if (balID == 1 || balID == 3) {
                                 groupId = 2;
@@ -205,8 +212,13 @@ public class DrawView extends View {
                     //LOGGER.i("ALMOST MOVING THE BALL, BALL ID: " + balID);
                     if (balID > -1) {
                         //LOGGER.i("MOVING THE BALL");
-                        rectangle.getColorballs().get(balID).setX(X);
-                        rectangle.getColorballs().get(balID).setY(Y);
+                        int dX = X - prevX;
+                        int dY = Y - prevY;
+                        prevX = X;
+                        prevY = Y;
+                        rectangle.getColorballs().get(balID).setX(rectangle.getColorballs().get(balID).getX() + dX);
+                        rectangle.getColorballs().get(balID).setY(rectangle.getColorballs().get(balID).getY() + dY);
+
 
                         if (groupId == 1) {
                             rectangle.getColorballs().get(1).setX(rectangle.getColorballs().get(0).getX());

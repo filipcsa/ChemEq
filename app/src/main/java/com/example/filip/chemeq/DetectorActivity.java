@@ -121,9 +121,11 @@ public class DetectorActivity extends AppCompatActivity {
 
     DialogInterface.OnClickListener dialogClickListener = (dialog, which) -> {
         switch (which){
+            // save example and finish current activity
             case DialogInterface.BUTTON_POSITIVE:
                 LOGGER.i("SAVING EXAMPLE");
                 saveExampleToDataset();
+                finish();
                 break;
 
             case DialogInterface.BUTTON_NEGATIVE:
@@ -159,7 +161,7 @@ public class DetectorActivity extends AppCompatActivity {
             e.printStackTrace();
             LOGGER.i("Problem while saving the text file");
         }
-
+        HIGHEST_FILENAME++;
     }
 
     private String getTrainingDataFromRectangles() {
