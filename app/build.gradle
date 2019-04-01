@@ -60,4 +60,5 @@ dependencies {
     //implementation 'org.tensorflow:tensorflow-lite:1.9.0'
     implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly'
     implementation 'com.rmtheis:tess-two:5.4.1'
+    implementation project(':openCVLibrary343')
 }

@@ -49,7 +49,7 @@ public class DetectorActivity extends AppCompatActivity {
 
     private final Logger LOGGER = new Logger(DetectorActivity.class.getName());
 
-    private TessOCR tessOCR = new TessOCR();
+    private TessOCR tessOCR;
 
     private static final String path = Environment.getExternalStorageDirectory().toString() + "/dataset";
     private static int HIGHEST_FILENAME = getHighestFilename();
@@ -79,6 +79,8 @@ public class DetectorActivity extends AppCompatActivity {
         */
         frameToCanvasMatrix = ImageUtils.getFrameToCanvasMatrix();
         ImageUtils.getFrameToCanvasMatrix().invert(canvasToFrameMatrix);
+
+        tessOCR = new TessOCR(image, canvasToFrameMatrix);
 
         LOGGER.i("Detected results: " + results.size());
 
@@ -202,6 +204,7 @@ public class DetectorActivity extends AppCompatActivity {
 
     /** Gonna be called when the adjustable rectangle is adjusted */
     public void runOCRForRectangle(RectF rect, RecognitionListItem recognitionListItem) {
+        RectF newRect = new RectF(rect);
         canvasToFrameMatrix.mapRect(rect);
         Bitmap croppedResult = null;
         try {
@@ -211,7 +214,10 @@ public class DetectorActivity extends AppCompatActivity {
             LOGGER.e(e, "Wrong coordinates of rectangle");
             return;
         }
+
         String text = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
+        // tessOCR.doOCR4Rectangle(newRect);
+
         recognitionListItem.setEquation(text);
         listAdapter.notifyDataSetChanged();
         LOGGER.i("There are " + listAdapter.getCount() + " in list adapter");
