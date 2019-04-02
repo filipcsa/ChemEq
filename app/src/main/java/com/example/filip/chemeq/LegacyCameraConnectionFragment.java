@@ -42,6 +42,10 @@ public class LegacyCameraConnectionFragment extends Fragment {
     // An additional thread for running tasks that shouldn't block the UI.
     private HandlerThread backgroundThread;
 
+    public LegacyCameraConnectionFragment () {
+
+    }
+
     public LegacyCameraConnectionFragment(final Camera.PreviewCallback imageListener,
                                           final int layout, final Size desiredSize) {
         this.imageListener = imageListener;

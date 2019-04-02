@@ -467,14 +467,14 @@ public class MultiBoxTracker {
           float area_a = a.width() * a.height();
           float area_b = b.width() * b.height();
 
-          RectF bigger = area_a > area_b ? a : b;
+          RectF smaller = area_a < area_b ? a : b;
           int smaller_index = area_a > area_b ? j : i;
 
           RectF intersection = new RectF();
           intersection.setIntersect(a, b);
           float area_intersection = intersection.width() * intersection.height();
 
-          if (area_intersection > 0.6 * bigger.width()*bigger.height())
+          if (area_intersection > 0.6 * smaller.width()*smaller.height())
             results.remove(copyResults.get(smaller_index));
           /*
             if (copyResults.get(i).getConfidence() >= copyResults.get(j).getConfidence())

@@ -161,6 +161,7 @@ public class TessOCR {
     private List<List<Pair<String, Double>>> allChoices;
     private String equation = "";
     private boolean parsing_ended = false;
+    private boolean parenthesis = false;
 
     private void stateMachine( State state, int pos) {
         // end condition
@@ -203,6 +204,12 @@ public class TessOCR {
                         LOGGER.i("From START to NO_ELEM on" + character + "\n");
                         stateMachine(State.NO_ELEM, pos+1);
                     }
+                    // parenthesis
+                    if (character == '('){
+                        LOGGER.i("From START to NUM on " + character + "\n");
+                        parenthesis = true;
+                        stateMachine(State.NUM, pos+1);
+                    }
                     break;
 
                 case NUM:
@@ -215,6 +222,12 @@ public class TessOCR {
                     else if ('A' <= character && character <= 'Z'){
                         LOGGER.i("From NUM to NO_ELEM on " + character + "\n");
                         stateMachine(State.NO_ELEM, pos+1);
+                    }
+                    // parenthesis
+                    if (character == '('){
+                        LOGGER.i("From NUM to NUM on " + character + "\n");
+                        parenthesis = true;
+                        stateMachine(State.NUM, pos+1);
                     }
                     break;
 
@@ -244,6 +257,18 @@ public class TessOCR {
                         LOGGER.i("From ELEM to IDX on " + character + "\n");
                         stateMachine(State.IDX, pos+1);
                     }
+                    // parenthesis
+                    if (character == '('){
+                        LOGGER.i("From ELEM to NUM on " + character + "\n");
+                        parenthesis = true;
+                        stateMachine(State.NUM, pos+1);
+                    }
+                    // close parenthesis
+                    if (character == ')' && parenthesis) {
+                        LOGGER.i("From ELEM to ELEM on " + character + "\n");
+                        parenthesis = false;
+                        stateMachine(State.ELEM, pos+1);
+                    }
                     break;
 
                 case NO_ELEM:
@@ -269,6 +294,18 @@ public class TessOCR {
                     else if ('A' <= character && character <= 'Z') {
                         LOGGER.i("From IDX to NO_ELEM");
                         stateMachine(State.NO_ELEM, pos+1);
+                    }
+                    // parenthesis
+                    if (character == '('){
+                        LOGGER.i("From IDX to NUM on " + character + "\n");
+                        parenthesis = true;
+                        stateMachine(State.NUM, pos+1);
+                    }
+                    // close parenthesis
+                    if (character == ')' && parenthesis) {
+                        LOGGER.i("From IDX to ELEM on " + character + "\n");
+                        parenthesis = false;
+                        stateMachine(State.ELEM, pos+1);
                     }
             }
 
