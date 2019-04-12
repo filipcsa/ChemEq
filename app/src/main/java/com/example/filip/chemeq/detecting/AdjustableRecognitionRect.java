@@ -127,7 +127,7 @@ public class AdjustableRecognitionRect {
         return recognitionListItem;
     }
 
-    public RectF getRectangle() {
+    public RectF getLocation() {
         int left = point1.x < point2.x ? point1.x : point2.x;
         left = left < point3.x ? left : point3.x;
 
@@ -141,5 +141,24 @@ public class AdjustableRecognitionRect {
         bottom = bottom > point3.y ? bottom : point3.y;
 
         return  new RectF(left, top, right, bottom);
+    }
+
+    public void setLocation(RectF rect) {
+        int top = (int) rect.top;
+        int left = (int) rect.left;
+        int right = (int) rect.right;
+        int bottom = (int) rect.bottom;
+
+        point1.x = left;
+        point1.y = top;
+
+        point2.x = right;
+        point2.y = top;
+
+        point3.x = right;
+        point3.y = bottom;
+
+        point4.x = left;
+        point4.y = bottom;
     }
 }

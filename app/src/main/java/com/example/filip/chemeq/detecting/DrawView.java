@@ -5,7 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -34,6 +33,7 @@ public class DrawView extends View {
     Paint paint;
     Canvas canvas;
 
+    /*
     public DrawView(Context context, List<Recognition> recognitions) {
         super(context);
         paint = new Paint();
@@ -43,18 +43,19 @@ public class DrawView extends View {
         for (Recognition recognition : recognitions) {
             AdjustableRecognitionRect ar = new AdjustableRecognitionRect(context, recognition);
             rectangles.add(ar);
-            ((DetectorActivity) context).runOCRForRectangle(ar.getRectangle(), ar.getRecognitionListItem());
+            ((DetectorActivity) context).runOCRForRectangle(ar.getLocation(), ar.getRecognitionListItem());
             ((DetectorActivity) context).addRecognitionListItem(ar.getRecognitionListItem());
         }
 
     }
+    */
 
     public void initDrawView(Context context, List<Recognition> recognitions) {
         this.da = (DetectorActivity) context;
         for (Recognition recognition : recognitions) {
             AdjustableRecognitionRect ar = new AdjustableRecognitionRect(context, recognition);
             rectangles.add(ar);
-            ((DetectorActivity) context).runOCRForRectangle(ar.getRectangle(), ar.getRecognitionListItem());
+            ((DetectorActivity) context).runOCRForRectangle(ar.getLocation(), ar.getRecognitionListItem());
             ((DetectorActivity) context).addRecognitionListItem(ar.getRecognitionListItem());
         }
     }
@@ -131,10 +132,6 @@ public class DrawView extends View {
                 canvas.drawRect(rectangle.getPoint2().x,
                         rectangle.getPoint4().y, rectangle.getPoint4().x, rectangle.getPoint2().y, paint);
             }
-            /* do i need this?
-            BitmapDrawable mBitmap;
-            mBitmap = new BitmapDrawable();
-            */
 
             // draw the balls on the canvas
             for (ColorBall ball : rectangle.getColorballs()) {
@@ -246,7 +243,7 @@ public class DrawView extends View {
                     // LOGGING
                     if (rectangle.isSelected()) {
                         LOGGER.i("BALL RELEASED");
-                        da.runOCRForRectangle(rectangle.getRectangle(), rectangle.getRecognitionListItem());
+                        da.runOCRForRectangle(rectangle.getLocation(), rectangle.getRecognitionListItem());
                     }
                 }
                 break;
@@ -256,13 +253,8 @@ public class DrawView extends View {
         return true;
     }
 
-    /*
-    public void shade_region_between_points() {
-        canvas.drawRect(point1.x, point3.y, point3.x, point1.y, paint);
-    }
-    */
 
-    public List<AdjustableRecognitionRect> getRectangles() {
+    public List<AdjustableRecognitionRect> getAdjustableRecognitionRects() {
         return rectangles;
     }
 }

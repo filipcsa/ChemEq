@@ -56,14 +56,9 @@ public class TessOCR {
         rotate = new Matrix();
         rotate.postRotate(90);
 
-        if(OpenCVLoader.initDebug()){
-            LOGGER.i("OpenCV loaded");
-        }else {
-            LOGGER.i("OpenCV failed");
-        }
-
         // threshold the image
         this.image = image.copy(image.getConfig(), true);
+        /*
         Mat imageMat = new Mat();
         Utils.bitmapToMat(this.image, imageMat);
         Imgproc.cvtColor(imageMat, imageMat, Imgproc.COLOR_BGR2GRAY);
@@ -71,6 +66,7 @@ public class TessOCR {
                 Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 51, 4);
         Utils.matToBitmap(imageMat, this.image);
         tessBaseAPI.setImage(rotateBitmap(this.image));
+        */
 
         // test();
     }
@@ -140,8 +136,8 @@ public class TessOCR {
         parsing_ended = false;
         stateMachine(State.START, 0);
 
-        equation.replace("+", " + ");
-        equation.replace("→", " → ");
+        equation = equation.replace("+", " + ");
+        equation = equation.replace("→", " → ");
 
         String ret = "Raw detection: " + text + "\n";
         ret += "After parsing: " + equation;

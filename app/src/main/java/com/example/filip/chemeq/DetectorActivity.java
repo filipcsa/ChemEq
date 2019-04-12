@@ -9,12 +9,9 @@ import android.os.Environment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 
 import com.example.filip.chemeq.detecting.AdjustableRecognitionRect;
 import com.example.filip.chemeq.detecting.RecognitionAdapter;
@@ -25,8 +22,12 @@ import com.example.filip.chemeq.util.ImageUtils;
 import com.example.filip.chemeq.util.Logger;
 import com.example.filip.chemeq.util.PassImage;
 
+import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
+
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -68,7 +69,7 @@ public class DetectorActivity extends AppCompatActivity {
 
         results = (List<Recognition>) getIntent().getSerializableExtra("results");
 
-        // Create ArrayAdapter using the planet list.
+        // Create ArrayAdapter using the planet list
         listAdapter = new RecognitionAdapter(this, recognitionList);
         listView.setAdapter(listAdapter);
 
@@ -88,7 +89,9 @@ public class DetectorActivity extends AppCompatActivity {
         this.drawView = findViewById(R.id.drawView);
         drawView.initDrawView(this, results);
 
-        // buttons
+        adjustResults();
+
+        // BUTTONS
         Button addBtn = findViewById(R.id.addButton);
         addBtn.setOnClickListener(v -> onAddButton());
 
@@ -170,9 +173,9 @@ public class DetectorActivity extends AppCompatActivity {
         String data = "";
         Matrix rotateMatrix = new Matrix();
         rotateMatrix.postRotate(90);
-        List<AdjustableRecognitionRect> adjustableRects = drawView.getRectangles();
+        List<AdjustableRecognitionRect> adjustableRects = drawView.getAdjustableRecognitionRects();
         for (AdjustableRecognitionRect ar : adjustableRects) {
-            RectF rect = ar.getRectangle();
+            RectF rect = ar.getLocation();
             canvasToFrameMatrix.mapRect(rect);
             rotateMatrix.mapRect(rect);
 
@@ -237,5 +240,115 @@ public class DetectorActivity extends AppCompatActivity {
         File[] files = directory.listFiles();
         // each example of the dataset has 2 files: a png and a txt file, therefore i divide by 2
         return files.length / 2;
+    }
+
+
+    private void adjustResults() {
+
+        if(OpenCVLoader.initDebug()){
+            LOGGER.i("OpenCV loaded");
+        }else {
+            LOGGER.i("OpenCV failed");
+        }
+        Bitmap threshImage = image.copy(image.getConfig(), true);
+        Mat imageMat = new Mat();
+        Utils.bitmapToMat(threshImage, imageMat);
+        Imgproc.cvtColor(imageMat, imageMat, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.adaptiveThreshold(imageMat, imageMat, 255,
+                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 131, 24);
+        Utils.matToBitmap(imageMat, threshImage);
+
+        List<AdjustableRecognitionRect> rects = drawView.getAdjustableRecognitionRects();
+        int blackPix = threshImage.getPixel(0,0);
+        LOGGER.i("BLACK PIXEL: " + blackPix);
+        for (AdjustableRecognitionRect rect : rects) {
+            RectF location = rect.getLocation();
+            canvasToFrameMatrix.mapRect(location);
+
+            // TODO finish the bottom part, run ocr after this, not before
+            // try to locate a larger whitespace on left and right side
+            // and only then locate the text
+            // THE RIGHT PART WHICH IS THE TOP BEFORE ROTATING
+            if (location.top - 50 >= 0) location.top = location.top - 50;
+            else location.top = 0;
+            int size = (int) (location.right - location.left);
+            int[] pixels = new int[size];
+            threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.top, size, 1);
+            int average = average(pixels);
+            while (average > -300000) {
+                location.top = location.top + 2;
+                threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.top, size, 1);
+                average = average(pixels);
+            }
+
+            // THE LEFT PART WHICH IS THE BOTTOM BEFORE ROTATING
+            if (location.bottom + 50 < threshImage.getHeight()) location.bottom += 50;
+            else location.bottom = threshImage.getHeight() - 1;
+            threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.bottom, size, 1);
+            average = average(pixels);
+            while (average > -300000) {
+                location.bottom -= 2;
+                threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.bottom, size, 1);
+                average = average(pixels);
+            }
+
+            // THE UPPER PART WHICH IS THE LEFT BEFORE ROTATING
+            if (location.left < 0) location.left = 0;
+            size = (int) (location.bottom - location.top);
+            pixels = new int[size];
+            //threshImage.getPixels(pixels, 0, threshImage.getWidth(), (int) location.left, (int)location.top, 1, size);
+            pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
+            average = average(pixels);
+            // the top rank should grow (left -)
+            while (average < -300000) {
+                location.left -= 2;
+                pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
+                average = average(pixels);
+            }
+            while (average > -300000) {
+                location.left += 1;
+                pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
+                average = average(pixels);
+            }
+
+            
+        }
+
+
+        // save for debug
+        File file = new File(path + "/" + "THRESH" + ".png");
+        FileOutputStream fOut;
+        try {
+            fOut = new FileOutputStream(file);
+            threshImage.compress(Bitmap.CompressFormat.PNG, 100, fOut);
+            fOut.flush();
+            fOut.close();
+            MediaScannerConnection.scanFile(this, new String[] { file.getAbsolutePath() }, null, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.i("Problem while saving image");
+        }
+    }
+
+
+    private int average(int[] data) {
+        int sum = 0;
+        for (int d : data) sum += d;
+        return sum / data.length;
+    }
+}
+
+class BitmapHelper {
+
+    public static int[] getBitmapPixels(Bitmap bitmap, int x, int y, int width, int height) {
+        int[] pixels = new int[bitmap.getWidth() * bitmap.getHeight()];
+        bitmap.getPixels(pixels, 0, bitmap.getWidth(), x, y,
+                width, height);
+        final int[] subsetPixels = new int[width * height];
+        for (int row = 0; row < height; row++) {
+            System.arraycopy(pixels, (row * bitmap.getWidth()),
+                    subsetPixels, row * width, width);
+        }
+        return subsetPixels;
     }
 }

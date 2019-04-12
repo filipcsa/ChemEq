@@ -474,7 +474,7 @@ public class MultiBoxTracker {
           intersection.setIntersect(a, b);
           float area_intersection = intersection.width() * intersection.height();
 
-          if (area_intersection > 0.6 * smaller.width()*smaller.height())
+          if (area_intersection > 0.3 * smaller.width()*smaller.height())
             results.remove(copyResults.get(smaller_index));
           /*
             if (copyResults.get(i).getConfidence() >= copyResults.get(j).getConfidence())

@@ -26,12 +26,15 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.filip.chemeq.detecting.ChemBase;
 import com.example.filip.chemeq.tracking.MultiBoxTracker;
 import com.example.filip.chemeq.util.BorderedText;
 import com.example.filip.chemeq.util.ImageUtils;
 import com.example.filip.chemeq.util.Logger;
 import com.example.filip.chemeq.util.PassImage;
 import com.example.filip.chemeq.util.ThreadUtils;
+
+import org.json.JSONException;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -123,6 +126,12 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
         captureBtn = findViewById(R.id.captureBtn);
         captureBtn.setOnClickListener(v -> captureImage());
 
+        // needs the context to load from assets :/
+        try {
+            ChemBase.loadJSON(this);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     private boolean cancelWork = false;
