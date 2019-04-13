@@ -53,7 +53,10 @@ public class ExampleInstrumentedTest {
     @Test
     public void loadJSONAndTryH2O() throws JSONException {
         ChemBase.loadJSON(context);
-        String name = ChemBase.getNameOfFormula("H₂O");
+        String name = ChemBase.getNameOfFormula("2H₂O");
         assertEquals("water", name);
+
+        name = ChemBase.getNameOfFormula("O₂");
+        assertEquals("dioxygen", name);
     }
 }

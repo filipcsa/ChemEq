@@ -16,6 +16,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+
 /**
  * Class for static access of known chemical compounds
  */
@@ -37,7 +41,7 @@ public class ChemBase {
             byte[] buffer = new byte[size];
             in.read(buffer);
             in.close();
-            json = new String(buffer, StandardCharsets.UTF_8);
+            json = new String(buffer, UTF_8);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -64,11 +68,23 @@ public class ChemBase {
     }
 
     public static String getNameOfFormula(String formula) {
+        // TODO remove the numbers in the beginning
+        formula = removeNumbersFromStarOfFormula(formula);
         for (Pair<String, String> pair : compounds) {
             if (pair.first.equals(formula))
                 return pair.second;
         }
         return "unknown";
+    }
+
+    private static String removeNumbersFromStarOfFormula(String formula) {
+        int numbersFromStart = 0;
+        char c = formula.charAt(numbersFromStart);
+        while ('2' <= c && c <= '9') {
+            numbersFromStart++;
+            c = formula.charAt(numbersFromStart);
+        }
+        return formula.substring(numbersFromStart);
     }
 
     private static int levenstein(String a, String b){

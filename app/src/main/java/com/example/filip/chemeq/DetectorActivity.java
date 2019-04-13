@@ -302,7 +302,7 @@ public class DetectorActivity extends AppCompatActivity {
                 pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
                 average = average(pixels);
             }
-            while (average > -300000) {
+            while (average > -200000) {
                 location.left += 1;
                 pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
                 average = average(pixels);

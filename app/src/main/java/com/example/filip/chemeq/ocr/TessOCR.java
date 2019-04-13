@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.util.Pair;
 
 import com.example.filip.chemeq.Recognition;
+import com.example.filip.chemeq.detecting.ChemBase;
 import com.example.filip.chemeq.detecting.RecognitionListItem;
 import com.example.filip.chemeq.util.Logger;
 import com.googlecode.tesseract.android.ResultIterator;
@@ -119,22 +120,22 @@ public class TessOCR {
         tessBaseAPI.setImage(bitmap);
         String text = tessBaseAPI.getUTF8Text();
 
+        // create a list of all choices at the level of single characters
         int level = TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
         ResultIterator ri = tessBaseAPI.getResultIterator();
         allChoices = new ArrayList<>();
         do {
             List<Pair<String, Double>> characterChoices = ri.getChoicesAndConfidence(level-1);
             allChoices.add(characterChoices);
-            /*
-            for (Pair<String, Double> choice : characterChoices) {
-                LOGGER.i("\t Character " + choice.first + " with conf " + choice.second);
-            }
-            */
         } while (ri.next(level));
 
-        LOGGER.i("Text before parsing: " + text + "\n");
+        // INIT THE VARIABLES REQUIRED FOR THE STATE MACHINE
+        leftSideCompounds = new ArrayList<>();
+        rightSideCompounds = new ArrayList<>();
+        lastCompound = ""; // last read compound, not the last one in eq, but shorter name is shorter
         equation = "";
         parsing_ended = false;
+        receivedArrow = false;
         stateMachine(State.START, 0);
 
         equation = equation.replace("+", " + ");
@@ -149,20 +150,26 @@ public class TessOCR {
         return recognitionListItem;
     }
 
-    // naprasenej state machine
+    // the states of the nfa ish thing (basically it is a automaton with stack
+    // but it is easier to model as nfa (* more details in the paper))
     private enum State {
         START,
         NUM,
         ELEM,
         NO_ELEM,
         IDX
-
     }
+
     private List<List<Pair<String, Double>>> allChoices;
+    private List<Pair<String, String>> leftSideCompounds;
+    private List<Pair<String, String>> rightSideCompounds;
+    private String lastCompound;
     private String equation = "";
     private boolean parsing_ended = false;
     private boolean parenthesis = false;
+    private boolean receivedArrow = false;
 
+    /** A crazy complicated recursive state machine for parsing the chemical equation by characters **/
     private void stateMachine( State state, int pos) {
         // end condition
         if (pos == allChoices.size()){
@@ -173,18 +180,30 @@ public class TessOCR {
             return;
         }
 
-        //LOGGER.i("State: " + state);
         for (int i = 0; i < allChoices.get(pos).size(); i++) {
             char character = allChoices.get(pos).get(i).first.charAt(0);
             LOGGER.i("Character: " + character + " on position :" + pos);
             equation += character;
             LOGGER.i("Equation: " + equation);
 
-            // + or → , its here instead of IDX and ELEM so the parsing is not that strict
-            if (character == '+' || character == '→'){
-                LOGGER.i("Read + or arrow, so going to start " + character + "\n");
+            // + or → or ending , its here instead and not checking IDX and ELEM so the parsing is not that strict
+            if (character == '+' || character == '→' || pos == allChoices.size()-1){
+                if (pos ==  allChoices.size()-1) lastCompound += character;
+                // ad the formula and its name to left or right side
+                String formulaName = ChemBase.getNameOfFormula(lastCompound);
+                if (receivedArrow) rightSideCompounds.add(new Pair<>(lastCompound, formulaName));
+                else leftSideCompounds.add(new Pair<>(lastCompound, formulaName));
+                // after receiving the arrow, start putting compounds to the left side
+                if (character == '→') receivedArrow = true;
+
+                LOGGER.i("Read + or arrow, so going to START " + character + "\n");
+                LOGGER.i("The compound read is " + lastCompound + " and its name is " + formulaName);
+
+                lastCompound = "";
                 stateMachine(State.START, pos+1);
             }
+            // it is here so the arrow or + wont get in the way
+            lastCompound += character;
 
             switch (state) {
 
@@ -311,6 +330,7 @@ public class TessOCR {
 
             if (parsing_ended) return;
             equation = equation.substring(0, equation.length() - 1);
+            lastCompound = lastCompound.substring(0, lastCompound.length() - 1);
         }
         // no character fits so leave out
         stateMachine(state, pos+1);
