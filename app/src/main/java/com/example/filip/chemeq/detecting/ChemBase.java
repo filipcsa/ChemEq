@@ -79,9 +79,12 @@ public class ChemBase {
 
     private static String removeNumbersFromStarOfFormula(String formula) {
         int numbersFromStart = 0;
+        if (formula.length() == 0) return "";
         char c = formula.charAt(numbersFromStart);
         while ('2' <= c && c <= '9') {
             numbersFromStart++;
+            // this may result in some weiiird stuff
+            if (formula.length() <= numbersFromStart) return formula;
             c = formula.charAt(numbersFromStart);
         }
         return formula.substring(numbersFromStart);
