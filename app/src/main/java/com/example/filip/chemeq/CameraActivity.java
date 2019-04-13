@@ -127,11 +127,13 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
         captureBtn.setOnClickListener(v -> captureImage());
 
         // needs the context to load from assets :/
+        /*
         try {
             ChemBase.loadJSON(this);
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        */
     }
 
     private boolean cancelWork = false;

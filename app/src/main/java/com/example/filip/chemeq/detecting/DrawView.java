@@ -55,7 +55,8 @@ public class DrawView extends View {
         for (Recognition recognition : recognitions) {
             AdjustableRecognitionRect ar = new AdjustableRecognitionRect(context, recognition);
             rectangles.add(ar);
-            ((DetectorActivity) context).runOCRForRectangle(ar.getLocation(), ar.getRecognitionListItem());
+            // don't want to run ocr before adjusting the rectangles in detectorActivity
+            //((DetectorActivity) context).runOCRForRectangle(ar.getLocation(), ar.getRecognitionListItem());
             ((DetectorActivity) context).addRecognitionListItem(ar.getRecognitionListItem());
         }
     }
@@ -97,6 +98,10 @@ public class DrawView extends View {
             invalidate();
             break;
         }
+    }
+
+    public void redraw() {
+        invalidate();
     }
 
     // the method that draws the balls
@@ -251,6 +256,12 @@ public class DrawView extends View {
         // redraw the canvas
         invalidate();
         return true;
+    }
+
+    public void runOCROnAllAdjustableRects() {
+        for (AdjustableRecognitionRect rect : rectangles) {
+            da.runOCRForRectangle(rect.getLocation(), rect.getRecognitionListItem());
+        }
     }
 
 

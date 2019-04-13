@@ -73,11 +73,6 @@ public class DetectorActivity extends AppCompatActivity {
         listAdapter = new RecognitionAdapter(this, recognitionList);
         listView.setAdapter(listAdapter);
 
-        /*
-        float[] values = getIntent().getFloatArrayExtra("matrix_values");
-        Matrix frameToCanvasMatrix = new Matrix();
-        frameToCanvasMatrix.setValues(values);
-        */
         frameToCanvasMatrix = ImageUtils.getFrameToCanvasMatrix();
         ImageUtils.getFrameToCanvasMatrix().invert(canvasToFrameMatrix);
 
@@ -89,7 +84,9 @@ public class DetectorActivity extends AppCompatActivity {
         this.drawView = findViewById(R.id.drawView);
         drawView.initDrawView(this, results);
 
+        // adjust rectangles and run ocr for the first time
         adjustResults();
+        drawView.runOCROnAllAdjustableRects();
 
         // BUTTONS
         Button addBtn = findViewById(R.id.addButton);
@@ -100,8 +97,6 @@ public class DetectorActivity extends AppCompatActivity {
 
         Button saveBtn = findViewById(R.id.saveButton);
         saveBtn.setOnClickListener(v -> onSaveButton());
-
-        LOGGER.i("HIGHEST FILENAME: " + HIGHEST_FILENAME);
     }
 
     /** On add rect button clicked **/
@@ -207,7 +202,6 @@ public class DetectorActivity extends AppCompatActivity {
 
     /** Gonna be called when the adjustable rectangle is adjusted */
     public void runOCRForRectangle(RectF rect, RecognitionListItem recognitionListItem) {
-        RectF newRect = new RectF(rect);
         canvasToFrameMatrix.mapRect(rect);
         Bitmap croppedResult = null;
         try {
@@ -218,10 +212,10 @@ public class DetectorActivity extends AppCompatActivity {
             return;
         }
 
-        String text = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
+        RecognitionListItem rli = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
         // tessOCR.doOCR4Rectangle(newRect);
 
-        recognitionListItem.setEquation(text);
+        recognitionListItem.setEquation(rli.getEquation());
         listAdapter.notifyDataSetChanged();
         LOGGER.i("There are " + listAdapter.getCount() + " in list adapter");
     }
@@ -259,8 +253,7 @@ public class DetectorActivity extends AppCompatActivity {
         Utils.matToBitmap(imageMat, threshImage);
 
         List<AdjustableRecognitionRect> rects = drawView.getAdjustableRecognitionRects();
-        int blackPix = threshImage.getPixel(0,0);
-        LOGGER.i("BLACK PIXEL: " + blackPix);
+
         for (AdjustableRecognitionRect rect : rects) {
             RectF location = rect.getLocation();
             canvasToFrameMatrix.mapRect(location);
@@ -276,6 +269,8 @@ public class DetectorActivity extends AppCompatActivity {
             threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.top, size, 1);
             int average = average(pixels);
             while (average > -300000) {
+                LOGGER.i("Average on right: " + average);
+                LOGGER.i("SHRINKING RIGHT!!");
                 location.top = location.top + 2;
                 threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.top, size, 1);
                 average = average(pixels);
@@ -287,6 +282,8 @@ public class DetectorActivity extends AppCompatActivity {
             threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.bottom, size, 1);
             average = average(pixels);
             while (average > -300000) {
+                LOGGER.i("Average on left: " + average);
+                LOGGER.i("SHRINKING LEFT!!");
                 location.bottom -= 2;
                 threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.bottom, size, 1);
                 average = average(pixels);
@@ -311,7 +308,9 @@ public class DetectorActivity extends AppCompatActivity {
                 average = average(pixels);
             }
 
-            
+            // set the adjustable rectangle to the adjusted location
+            frameToCanvasMatrix.mapRect(location);
+            rect.setLocation(location);
         }
 
 

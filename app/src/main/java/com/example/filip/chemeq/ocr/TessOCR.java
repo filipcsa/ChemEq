@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.util.Pair;
 
 import com.example.filip.chemeq.Recognition;
+import com.example.filip.chemeq.detecting.RecognitionListItem;
 import com.example.filip.chemeq.util.Logger;
 import com.googlecode.tesseract.android.ResultIterator;
 import com.googlecode.tesseract.android.TessBaseAPI;
@@ -114,7 +115,7 @@ public class TessOCR {
         }
     }
 
-    public String doOCRonSingleExample(Bitmap bitmap) {
+    public RecognitionListItem doOCRonSingleExample(Bitmap bitmap) {
         tessBaseAPI.setImage(bitmap);
         String text = tessBaseAPI.getUTF8Text();
 
@@ -142,7 +143,10 @@ public class TessOCR {
         String ret = "Raw detection: " + text + "\n";
         ret += "After parsing: " + equation;
 
-        return ret;
+        RecognitionListItem recognitionListItem = new RecognitionListItem();
+        recognitionListItem.setEquation(ret);
+
+        return recognitionListItem;
     }
 
     // naprasenej state machine
