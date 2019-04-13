@@ -215,7 +215,7 @@ public class DetectorActivity extends AppCompatActivity {
         RecognitionListItem rli = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
         // tessOCR.doOCR4Rectangle(newRect);
 
-        recognitionListItem.setEquation(rli.getEquation());
+        recognitionListItem.setAll(rli);
         listAdapter.notifyDataSetChanged();
         LOGGER.i("There are " + listAdapter.getCount() + " in list adapter");
     }

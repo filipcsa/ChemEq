@@ -36,4 +36,10 @@ public class RecognitionListItem {
     public void setRightSideCompounds(List<Pair<String, String>> rightSideCompounds) {
         this.rightSideCompounds = rightSideCompounds;
     }
+
+    public void setAll(RecognitionListItem recognitionListItem) {
+        setEquation(recognitionListItem.getEquation());
+        setLeftSideCompounds(recognitionListItem.getLeftSideCompounds());
+        setRightSideCompounds(recognitionListItem.getRightSideCompounds());
+    }
 }

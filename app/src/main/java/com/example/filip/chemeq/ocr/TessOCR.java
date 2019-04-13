@@ -130,13 +130,10 @@ public class TessOCR {
         } while (ri.next(level));
 
         // INIT THE VARIABLES REQUIRED FOR THE STATE MACHINE
-        leftSideCompounds = new ArrayList<>();
-        rightSideCompounds = new ArrayList<>();
-        lastCompound = ""; // last read compound, not the last one in eq, but shorter name is shorter
         equation = "";
         parsing_ended = false;
-        receivedArrow = false;
         stateMachine(State.START, 0);
+        fillTheNamesOfFormulas();
 
         equation = equation.replace("+", " + ");
         equation = equation.replace("→", " → ");
@@ -146,8 +143,37 @@ public class TessOCR {
 
         RecognitionListItem recognitionListItem = new RecognitionListItem();
         recognitionListItem.setEquation(ret);
+        recognitionListItem.setLeftSideCompounds(leftSideCompounds);
+        recognitionListItem.setRightSideCompounds(rightSideCompounds);
 
         return recognitionListItem;
+    }
+
+    /** Fills the left and right side lists with the formulas and their names **/
+    private void fillTheNamesOfFormulas() {
+        leftSideCompounds = new ArrayList<>();
+        rightSideCompounds = new ArrayList<>();
+        String leftSideString = equation.split("→")[0];
+        String rightSideString = "";
+
+        // to prevent null ptr exception in case the eq is bad
+        if (equation.split("→").length == 2)
+            rightSideString = equation.split("→")[1];
+
+        String[] leftSideFormulas = leftSideString.split("\\+");
+        String[] rightSideFormulas = rightSideString.split("\\+");
+
+        for (String formula : leftSideFormulas) {
+            String formulaName = ChemBase.getNameOfFormula(formula);
+            leftSideCompounds.add(new Pair<>(formula, formulaName));
+            LOGGER.i(formula + " is " + formulaName);
+        }
+
+        for (String formula : rightSideFormulas) {
+            String formulaName = ChemBase.getNameOfFormula(formula);
+            rightSideCompounds.add(new Pair<>(formula, formulaName));
+            LOGGER.i(formula + " is " + formulaName);
+        }
     }
 
     // the states of the nfa ish thing (basically it is a automaton with stack
@@ -163,11 +189,9 @@ public class TessOCR {
     private List<List<Pair<String, Double>>> allChoices;
     private List<Pair<String, String>> leftSideCompounds;
     private List<Pair<String, String>> rightSideCompounds;
-    private String lastCompound;
     private String equation = "";
     private boolean parsing_ended = false;
     private boolean parenthesis = false;
-    private boolean receivedArrow = false;
 
     /** A crazy complicated recursive state machine for parsing the chemical equation by characters **/
     private void stateMachine( State state, int pos) {
@@ -188,22 +212,9 @@ public class TessOCR {
 
             // + or → or ending , its here instead and not checking IDX and ELEM so the parsing is not that strict
             if (character == '+' || character == '→' || pos == allChoices.size()-1){
-                if (pos ==  allChoices.size()-1) lastCompound += character;
-                // ad the formula and its name to left or right side
-                String formulaName = ChemBase.getNameOfFormula(lastCompound);
-                if (receivedArrow) rightSideCompounds.add(new Pair<>(lastCompound, formulaName));
-                else leftSideCompounds.add(new Pair<>(lastCompound, formulaName));
-                // after receiving the arrow, start putting compounds to the left side
-                if (character == '→') receivedArrow = true;
-
                 LOGGER.i("Read + or arrow, so going to START " + character + "\n");
-                LOGGER.i("The compound read is " + lastCompound + " and its name is " + formulaName);
-
-                lastCompound = "";
                 stateMachine(State.START, pos+1);
             }
-            // it is here so the arrow or + wont get in the way
-            lastCompound += character;
 
             switch (state) {
 
@@ -330,7 +341,6 @@ public class TessOCR {
 
             if (parsing_ended) return;
             equation = equation.substring(0, equation.length() - 1);
-            lastCompound = lastCompound.substring(0, lastCompound.length() - 1);
         }
         // no character fits so leave out
         stateMachine(state, pos+1);
