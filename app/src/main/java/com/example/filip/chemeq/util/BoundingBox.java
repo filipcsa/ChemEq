@@ -1,5 +1,7 @@
 package com.example.filip.chemeq.util;
 
+import com.example.filip.chemeq.CameraActivity;
+
 /**
  * Model to store the data of a bounding box
  *
@@ -7,9 +9,11 @@ package com.example.filip.chemeq.util;
  * URL: https://github.com/szaza/android-yolo-v2
  */
 public class BoundingBox {
+    private Logger LOGGER = new Logger(BoundingBox.class.getName());
     private float x, y;
     private float width, height;
     private float confidence;
+    private double[] classes;
 
     public float getX() {
         return x;
@@ -49,5 +53,15 @@ public class BoundingBox {
 
     public void setConfidence(float confidence) {
         this.confidence = confidence;
+    }
+
+    public double[] getClasses() {
+        return classes;
+    }
+
+    public void setClasses(double[] classes) {
+        if (confidence > 0.4)
+            LOGGER.i("CLASSES IN BB: " + classes[0]);
+        this.classes = classes;
     }
 }

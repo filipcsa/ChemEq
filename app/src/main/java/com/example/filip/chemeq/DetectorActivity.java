@@ -262,29 +262,27 @@ public class DetectorActivity extends AppCompatActivity {
             // try to locate a larger whitespace on left and right side
             // and only then locate the text
             // THE RIGHT PART WHICH IS THE TOP BEFORE ROTATING
-            if (location.top - 50 >= 0) location.top = location.top - 50;
+            if (location.top - 100 >= 0) location.top = location.top - 100;
             else location.top = 0;
             int size = (int) (location.right - location.left);
             int[] pixels = new int[size];
             threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.top, size, 1);
             int average = average(pixels);
             while (average > -300000) {
-                LOGGER.i("Average on right: " + average);
-                LOGGER.i("SHRINKING RIGHT!!");
                 location.top = location.top + 2;
+                if (location.top > threshImage.getHeight() - 1) break;
                 threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.top, size, 1);
                 average = average(pixels);
             }
 
             // THE LEFT PART WHICH IS THE BOTTOM BEFORE ROTATING
-            if (location.bottom + 50 < threshImage.getHeight()) location.bottom += 50;
+            if (location.bottom + 100 < threshImage.getHeight()) location.bottom += 100;
             else location.bottom = threshImage.getHeight() - 1;
             threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.bottom, size, 1);
             average = average(pixels);
-            while (average > -300000) {
-                LOGGER.i("Average on left: " + average);
-                LOGGER.i("SHRINKING LEFT!!");
+            while (average > -400000) {
                 location.bottom -= 2;
+                if (location.bottom < location.top) break;
                 threshImage.getPixels(pixels, 0, size, (int)location.left, (int)location.bottom, size, 1);
                 average = average(pixels);
             }
@@ -292,19 +290,34 @@ public class DetectorActivity extends AppCompatActivity {
             // THE UPPER PART WHICH IS THE LEFT BEFORE ROTATING
             if (location.left < 0) location.left = 0;
             size = (int) (location.bottom - location.top);
+            if (size < 1) continue;
             pixels = new int[size];
             //threshImage.getPixels(pixels, 0, threshImage.getWidth(), (int) location.left, (int)location.top, 1, size);
             pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
             average = average(pixels);
             // the top rank should grow (left -)
-            while (average < -300000) {
+            while (average < -180000) {
                 location.left -= 2;
                 pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
                 average = average(pixels);
             }
-            while (average > -200000) {
+            while (average > -180000) {
                 location.left += 1;
                 pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
+                average = average(pixels);
+            }
+
+            // THE LOWER PART WHICH IS THE RIGHT BEFORE ROTATING
+            pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.right, (int)location.top, 1, size);
+            average = average(pixels);
+            while (average < -200000) {
+                location.right += 2;
+                pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.right, (int)location.top, 1, size);
+                average = average(pixels);
+            }
+            while (average > -200000) {
+                location.right -= 1;
+                pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.right, (int)location.top, 1, size);
                 average = average(pixels);
             }
 

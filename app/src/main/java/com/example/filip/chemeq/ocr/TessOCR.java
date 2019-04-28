@@ -37,7 +37,6 @@ public class TessOCR {
     private String[] index_arr = {"₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"};
     private List<String> indexes = new ArrayList<>(Arrays.asList(index_arr));
 
-    private Bitmap image; // achtung! it is turned by 90 degrees
     private Matrix canvasToFrame;
     private Matrix frameToCanvas = new Matrix();
     private Matrix rotate;
@@ -59,7 +58,6 @@ public class TessOCR {
         rotate.postRotate(90);
 
         // threshold the image
-        this.image = image.copy(image.getConfig(), true);
         /*
         Mat imageMat = new Mat();
         Utils.bitmapToMat(this.image, imageMat);
@@ -123,11 +121,13 @@ public class TessOCR {
         // create a list of all choices at the level of single characters
         int level = TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
         ResultIterator ri = tessBaseAPI.getResultIterator();
+        LOGGER.i("Result iterator retrieved");
         allChoices = new ArrayList<>();
         do {
             List<Pair<String, Double>> characterChoices = ri.getChoicesAndConfidence(level-1);
             allChoices.add(characterChoices);
         } while (ri.next(level));
+        ri.delete();
 
         // INIT THE VARIABLES REQUIRED FOR THE STATE MACHINE
         equation = "";
@@ -361,38 +361,6 @@ public class TessOCR {
                 return true;
         }
         return false;
-    }
-
-    public String doOCR4Rectangle(RectF rectF) {
-        tessBaseAPI.setImage(this.image);
-        canvasToFrame.mapRect(rectF);
-        rotate.mapRect(rectF);
-        tessBaseAPI.setRectangle((int) rectF.left, (int) rectF.top, (int) rectF.width(), (int) rectF.height());
-
-        String text = tessBaseAPI.getUTF8Text();
-        LOGGER.i(text);
-
-        /*
-        ResultIterator ri = tessBaseAPI.getResultIterator();
-
-        if (ri == null) LOGGER.i("RESULT ITERATOR IS NULL");
-        List<Pair<String, Double>> wordsChoices = ri.getChoicesAndConfidence(TessBaseAPI.PageIteratorLevel.RIL_WORD);
-
-        for (Pair<String, Double> choice : wordsChoices){
-            LOGGER.i(choice.first);
-        }
-        */
-        ResultIterator ri = tessBaseAPI.getResultIterator();
-        int level = TessBaseAPI.PageIteratorLevel.RIL_WORD;
-        do {
-            String word = ri.getUTF8Text(level);
-            if (word != null)
-                LOGGER.i(word);
-        } while (ri.next(level));
-
-        ri.delete();
-
-        return text;
     }
 
 

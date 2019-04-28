@@ -27,6 +27,8 @@ public class Recognition implements Serializable {
     /** The coordinates of the rectangle to easily pass to the next activity*/
     private float left, top, right, bottom;
 
+    private int clss;
+
     public Recognition (
             final String id, String title, final Float confidence, final RectF location) {
         this.id = id;

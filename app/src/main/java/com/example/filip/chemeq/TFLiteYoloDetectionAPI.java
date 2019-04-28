@@ -125,7 +125,7 @@ public class TFLiteYoloDetectionAPI implements Classifier {
         //d.tfLite.setNumThreads(8);
         // TODO count the last value dynamically for yolov2
         // 13 13 30
-        d.output = new float[1][GRID_WIDTH][GRID_HEIGHT][30];
+        d.output = new float[1][GRID_WIDTH][GRID_HEIGHT][35];
         return d;
     }
 
@@ -180,11 +180,16 @@ public class TFLiteYoloDetectionAPI implements Classifier {
             for (int cx = 0; cx < GRID_WIDTH; cx++) {
                 for (int b = 0; b < NUM_BOXES_PER_CELL; b++) {
                     BoundingBox prediction = new BoundingBox();
-                    prediction.setX((cx + sigmoid(tensor[cy][cx][(NUM_BOXES_PER_CELL + 1) * b + 0])) * blockSize);
-                    prediction.setY((cy + sigmoid(tensor[cy][cx][(NUM_BOXES_PER_CELL + 1) * b + 1])) * blockSize);
-                    prediction.setWidth((float) (Math.exp(tensor[cy][cx][(NUM_BOXES_PER_CELL + 1) * b + 2]) * anchors[2 * b] * 32));
-                    prediction.setHeight((float) (Math.exp(tensor[cy][cx][(NUM_BOXES_PER_CELL + 1) * b + 3]) * anchors[2 * b + 1] * 32));
-                    prediction.setConfidence(sigmoid(tensor[cy][cx][(NUM_BOXES_PER_CELL + 1) * b + 4]));
+                    prediction.setX((cx + sigmoid(tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 0])) * blockSize);
+                    prediction.setY((cy + sigmoid(tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 1])) * blockSize);
+                    prediction.setWidth((float) (Math.exp(tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 2]) * anchors[2 * b] * 32));
+                    prediction.setHeight((float) (Math.exp(tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 3]) * anchors[2 * b + 1] * 32));
+                    prediction.setConfidence(sigmoid(tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 4]));
+
+                    // classes
+                    double[] classes = new double[1];
+                    classes[0] = tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 5];
+                    prediction.setClasses(classes);
                     allPredictions.add(prediction);
                 }
             }
