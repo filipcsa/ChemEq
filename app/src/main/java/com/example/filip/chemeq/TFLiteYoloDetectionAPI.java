@@ -187,8 +187,9 @@ public class TFLiteYoloDetectionAPI implements Classifier {
                     prediction.setConfidence(sigmoid(tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 4]));
 
                     // classes
-                    double[] classes = new double[1];
+                    double[] classes = new double[2];
                     classes[0] = tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 5];
+                    classes[1] = tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 6];
                     prediction.setClasses(classes);
                     allPredictions.add(prediction);
                 }
@@ -211,7 +212,7 @@ public class TFLiteYoloDetectionAPI implements Classifier {
                 break;
             RectF detection = new RectF(b.getX() - b.getWidth()/2, b.getY() - b.getHeight()/2,
                     b.getX() + b.getWidth()/2, b.getY() + b.getHeight()/2);
-            recognitions.add(new Recognition("0", labels.get(0),
+            recognitions.add(new Recognition("0", labels.get(b.getObjectClass()),
                     b.getConfidence(), detection));
         }
         return recognitions;

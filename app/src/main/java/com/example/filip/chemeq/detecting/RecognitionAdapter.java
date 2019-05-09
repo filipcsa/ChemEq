@@ -13,6 +13,8 @@ import android.widget.TableRow;
 import android.widget.TextView;
 
 import com.example.filip.chemeq.R;
+import com.example.filip.chemeq.TFLiteYoloDetectionAPI;
+import com.example.filip.chemeq.util.Logger;
 
 import java.util.Iterator;
 import java.util.List;
@@ -21,6 +23,7 @@ public class RecognitionAdapter extends ArrayAdapter<RecognitionListItem> {
 
     private Context context;
     private List<RecognitionListItem> recognitionList;
+    private static final Logger LOGGER = new Logger(RecognitionAdapter.class.getName());
 
     public RecognitionAdapter(Context context, List<RecognitionListItem> list) {
         super(context, 0, list);
@@ -48,6 +51,24 @@ public class RecognitionAdapter extends ArrayAdapter<RecognitionListItem> {
 
         formulaNamesRow.removeAllViews();
         formulasRow.removeAllViews();
+
+
+        if (currentRecognition.isMath()) {
+            TextView a = initializeTextView();
+            int result = 0;
+            if (currentRecognition.getOp() == '+')
+                result = currentRecognition.getA() + currentRecognition.getB();
+            if (currentRecognition.getOp() == '-')
+                result = currentRecognition.getA() - currentRecognition.getB();
+            if (currentRecognition.getOp() == '×')
+                result = currentRecognition.getA() * currentRecognition.getB();
+            if (currentRecognition.getOp() == '÷')
+                result = currentRecognition.getA() / currentRecognition.getB();
+            String matheq = (currentRecognition.getA() + " " + currentRecognition.getOp() + " " + currentRecognition.getB() + " = " + result);
+            a.setText(matheq);
+            formulasRow.addView(a);
+            return listItem;
+        }
 
         // the left side of the equation
         Iterator it = currentRecognition.getLeftSideCompounds().iterator();

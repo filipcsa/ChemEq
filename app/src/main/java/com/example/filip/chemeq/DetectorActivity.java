@@ -211,7 +211,6 @@ public class DetectorActivity extends AppCompatActivity {
             LOGGER.e(e, "Wrong coordinates of rectangle");
             return;
         }
-
         RecognitionListItem rli = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
         // tessOCR.doOCR4Rectangle(newRect);
 

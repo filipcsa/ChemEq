@@ -60,8 +60,12 @@ public class BoundingBox {
     }
 
     public void setClasses(double[] classes) {
-        if (confidence > 0.4)
-            LOGGER.i("CLASSES IN BB: " + classes[0]);
         this.classes = classes;
+    }
+
+    public int getObjectClass() {
+        if (classes[0] > classes[1])
+            return 0;
+        return 1;
     }
 }

@@ -126,12 +126,26 @@ public class TessOCR {
         do {
             List<Pair<String, Double>> characterChoices = ri.getChoicesAndConfidence(level-1);
             allChoices.add(characterChoices);
+            LOGGER.i("Character choices received");
         } while (ri.next(level));
         ri.delete();
 
         // INIT THE VARIABLES REQUIRED FOR THE STATE MACHINE
         equation = "";
         parsing_ended = false;
+
+        // try to parse as a mathematical equation
+        a = 0; b = 0; succ = false;
+        tryToParseAsMathEq(MathState.START, 0);
+        if (succ) {
+            LOGGER.i("MATH EQ PARSED: " + a + op + b);
+            RecognitionListItem recognitionListItem = new RecognitionListItem();
+            recognitionListItem.setMath(true);
+            recognitionListItem.setA(a);
+            recognitionListItem.setB(b);
+            recognitionListItem.setOp(op);
+            return  recognitionListItem;
+        }
         stateMachine(State.START, 0);
         fillTheNamesOfFormulas();
 
@@ -147,6 +161,80 @@ public class TessOCR {
         recognitionListItem.setRightSideCompounds(rightSideCompounds);
 
         return recognitionListItem;
+    }
+
+    /** bordel pro parsovani cmatematickejch rovnic aaaa **/
+    private boolean succ;
+    private int a, b;
+    char op;
+    private enum MathState{
+        START,
+        FIRST,
+        OP,
+        SECOND
+    }
+    /** Tries to parse as math eq **/
+    private void tryToParseAsMathEq(MathState state, int pos) {
+        if (pos == allChoices.size()){
+            if (state == MathState.SECOND){
+                succ = true;
+            }
+            return;
+        }
+
+        for (int i = 0; i < allChoices.get(pos).size(); i++) {
+            char character = allChoices.get(pos).get(i).first.charAt(0);
+            if (character == ' ')
+                tryToParseAsMathEq(state, pos+1);
+            LOGGER.i("MMM" + " character read " + character);
+            switch (state) {
+                case START:
+                    if ('0' <= character && character <= '9') {
+                        a = a*10 + (character - '0');
+                        LOGGER.i("MMM" + " from START to FIRST on " + character);
+                        tryToParseAsMathEq(MathState.FIRST, pos + 1);
+                    }
+                    break;
+
+                case FIRST:
+                    if ('0' <= character && character <= '9') {
+                        a = a*10 + (character - '0');
+                        LOGGER.i("MMM" + " from FIRST to FIRST on " + character);
+                        tryToParseAsMathEq(MathState.FIRST, pos + 1);
+                    }
+                    if (character == '+' || character == '-' || character == '×' || character == '÷') {
+                        op = character;
+                        LOGGER.i("MMM" + " from FIRST to OP on " + character);
+                        tryToParseAsMathEq(MathState.OP, pos+1);
+                    }
+                    break;
+
+                case OP:
+                    if ('0' <= character && character <= '9') {
+                        b = b * 10 + (character - '0');
+                        LOGGER.i("MMM" + " from OP to SECOND on " + character);
+                        tryToParseAsMathEq(MathState.SECOND, pos + 1);
+                    }
+                    break;
+
+                case SECOND:
+                    if ('0' <= character && character <= '9') {
+                        b = b * 10 + (character - '0');
+                        LOGGER.i("MMM" + " from SECOND to SECOND on " + character);
+                        tryToParseAsMathEq(MathState.SECOND, pos + 1);
+                    }
+                    if (character == '='){
+                        LOGGER.i("MMM" + " " + character);
+                        succ = true;
+                    }
+            }
+
+            if (succ) {
+                return;
+            }
+
+        }
+
     }
 
     /** Fills the left and right side lists with the formulas and their names **/
