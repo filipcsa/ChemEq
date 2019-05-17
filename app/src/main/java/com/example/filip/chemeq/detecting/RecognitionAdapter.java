@@ -13,7 +13,6 @@ import android.widget.TableRow;
 import android.widget.TextView;
 
 import com.example.filip.chemeq.R;
-import com.example.filip.chemeq.TFLiteYoloDetectionAPI;
 import com.example.filip.chemeq.util.Logger;
 
 import java.util.Iterator;

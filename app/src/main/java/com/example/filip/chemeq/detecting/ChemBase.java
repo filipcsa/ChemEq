@@ -68,7 +68,6 @@ public class ChemBase {
     }
 
     public static String getNameOfFormula(String formula) {
-        // TODO remove the numbers in the beginning
         formula = removeNumbersFromStarOfFormula(formula);
         for (Pair<String, String> pair : compounds) {
             if (pair.first.equals(formula))

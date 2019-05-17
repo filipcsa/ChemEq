@@ -16,7 +16,7 @@ import android.widget.ListView;
 import com.example.filip.chemeq.detecting.AdjustableRecognitionRect;
 import com.example.filip.chemeq.detecting.RecognitionAdapter;
 import com.example.filip.chemeq.detecting.RecognitionListItem;
-import com.example.filip.chemeq.ocr.TessOCR;
+import com.example.filip.chemeq.ocr.TessOCRAnalyzer;
 import com.example.filip.chemeq.detecting.DrawView;
 import com.example.filip.chemeq.util.ImageUtils;
 import com.example.filip.chemeq.util.Logger;
@@ -50,7 +50,7 @@ public class DetectorActivity extends AppCompatActivity {
 
     private final Logger LOGGER = new Logger(DetectorActivity.class.getName());
 
-    private TessOCR tessOCR;
+    private TessOCRAnalyzer tessOCR;
 
     private static final String path = Environment.getExternalStorageDirectory().toString() + "/dataset";
     private static int HIGHEST_FILENAME = getHighestFilename();
@@ -76,7 +76,7 @@ public class DetectorActivity extends AppCompatActivity {
         frameToCanvasMatrix = ImageUtils.getFrameToCanvasMatrix();
         ImageUtils.getFrameToCanvasMatrix().invert(canvasToFrameMatrix);
 
-        tessOCR = new TessOCR(image, canvasToFrameMatrix);
+        tessOCR = new TessOCRAnalyzer(image, canvasToFrameMatrix);
 
         LOGGER.i("Detected results: " + results.size());
 

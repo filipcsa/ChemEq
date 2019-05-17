@@ -2,16 +2,17 @@ package com.example.filip.chemeq.detecting;
 
 import android.util.Pair;
 
-import com.example.filip.chemeq.ocr.TessOCR;
 import com.example.filip.chemeq.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+
+import org.ejml.data.DenseMatrix64F;
+import org.ejml.ops.CommonOps;
+import org.ejml.simple.SimpleMatrix;
 
 public class RecognitionListItem {
 
@@ -112,17 +113,54 @@ public class RecognitionListItem {
         List<Map<String, Integer>> leftDicts = new ArrayList<>();
         List<Map<String, Integer>> rightDicts = new ArrayList<>();
         for (Pair<String, String> compound : leftSideCompounds) {
+            Map<String, Integer> parentDict = new HashMap<>();
+            boolean parentOpened = false;
             String component = compound.first;
             int i = 0;
             int c = 1;
             Map<String, Integer> leftCounts = new HashMap<>();
             while (i < component.length()) {
-                // TODO number in beginnign
-                if (i == 0 && isStringInteger(component.substring(0, 1))){
-                    c = Integer.parseInt(component.substring(0, 1));
+                // number in beginning
+                if (isStringInteger(component.substring(i, i+1))){
+                    if (c == 1) c = Integer.parseInt(component.substring(0, 1));
+                    else
+                        c = 10*c + Integer.parseInt(component.substring(0, 1));
                     i++;
                     continue;
                 }
+
+                // parenthesis
+                if (component.substring(i, i+1).equals("(")){
+                    i++;
+                    parentOpened = true;
+                    continue;
+                }
+
+                int number = 1;
+                if (component.substring(i, i+1).equals(")")) {
+                    parentOpened = false;
+                    LOGGER.i("Parenthesis closed");
+                    if ((i+1 < component.length() && isStringIndex(component.substring(i+1, i+2)))) {
+                        char idx = component.substring(i+1, i+2).charAt(0);
+                        number = idx - '₀';
+                        i++;
+                    }
+
+                    for (String key : parentDict.keySet()){
+                        int inParent = parentDict.get(key) * number;
+                        if (totalLeft.containsKey(key))
+                            totalLeft.put(key, totalLeft.get(key)+inParent);
+                        else
+                            totalLeft.put(key, inParent);
+                        if (leftCounts.containsKey(key))
+                            leftCounts.put(key, leftCounts.get(key)+inParent);
+                        else
+                            leftCounts.put(key, inParent);
+                    }
+                    i++;
+                    continue;
+                }
+
 
                 String element;
                 // 2 letter element
@@ -134,13 +172,23 @@ public class RecognitionListItem {
                 else {
                     element = component.substring(i, i+1);
                 }
-                int number = 1;
+
                 if (i+1 < component.length() && isStringIndex(component.substring(i+1, i+2))) {
                     char idx = component.substring(i+1, i+2).charAt(0);
                     number = idx - '₀';
                     i += 1;
                 }
                 number *= c;
+
+                if (parentOpened) {
+                    if (parentDict.containsKey(element))
+                        parentDict.put(element, parentDict.get(element)+number);
+                    else
+                        parentDict.put(element, number);
+                    i++;
+                    continue;
+                }
+
                 if (totalLeft.containsKey(element))
                     totalLeft.put(element, totalLeft.get(element)+number);
                 else
@@ -155,14 +203,51 @@ public class RecognitionListItem {
         }
         LOGGER.i("IMPORTANTTT L\n" + leftDicts.toString());
 
+        // RIGHT SIDE
         for (Pair<String, String> compound : rightSideCompounds) {
+            Map<String, Integer> parentDict = new HashMap<>();
+            boolean parentOpened = false;
             String component = compound.first;
             int i = 0;
             int c = 1;
             Map<String, Integer> rightCounts = new HashMap<>();
             while (i < component.length()) {
-                if (i == 0 && isStringInteger(component.substring(0, 1))){
-                    c = Integer.parseInt(component.substring(0, 1));
+                if (isStringInteger(component.substring(i, i+1))){
+                    if (c == 1) c = Integer.parseInt(component.substring(0, 1));
+                    else
+                        c = 10*c + Integer.parseInt(component.substring(0, 1));
+                    i++;
+                    continue;
+                }
+
+                // parenthesis
+                if (component.substring(i, i+1).equals("(")){
+                    i++;
+                    parentOpened = true;
+                    continue;
+                }
+
+                int number = 1;
+                if (component.substring(i, i+1).equals(")")) {
+                    parentOpened = false;
+                    LOGGER.i("Parenthesis closed");
+                    if ((i+1 < component.length() && isStringIndex(component.substring(i+1, i+2)))) {
+                        char idx = component.substring(i+1, i+2).charAt(0);
+                        number = idx - '₀';
+                        i++;
+                    }
+
+                    for (String key : parentDict.keySet()){
+                        int inParent = parentDict.get(key) * number;
+                        if (totalRight.containsKey(key))
+                            totalRight.put(key, totalRight.get(key)+inParent);
+                        else
+                            totalRight.put(key, inParent);
+                        if (rightCounts.containsKey(key))
+                            rightCounts.put(key, rightCounts.get(key)+inParent);
+                        else
+                            rightCounts.put(key, inParent);
+                    }
                     i++;
                     continue;
                 }
@@ -177,13 +262,23 @@ public class RecognitionListItem {
                 else {
                     element = component.substring(i, i+1);
                 }
-                int number = 1;
+
                 if (i+1 < component.length() && isStringIndex(component.substring(i+1, i+2))) {
                     char idx = component.substring(i+1, i+2).charAt(0);
                     number = idx - '₀';
                     i += 1;
                 }
                 number *= c;
+
+                if (parentOpened) {
+                    if (parentDict.containsKey(element))
+                        parentDict.put(element, parentDict.get(element)+number);
+                    else
+                        parentDict.put(element, number);
+                    i++;
+                    continue;
+                }
+
                 if (totalRight.containsKey(element))
                     totalRight.put(element, totalRight.get(element)+number);
                 else
@@ -210,6 +305,49 @@ public class RecognitionListItem {
             LOGGER.i("Not balancable");
             return;
         }
+
+        LOGGER.i("Total left: " + totalLeft.toString());
+        LOGGER.i("Total left size: " + totalLeft.size());
+
+        int rows = totalLeft.size();
+        int cols = leftDicts.size() + rightDicts.size();
+        double[][] data = new double[rows][cols];
+        int elIdx = 0;
+        int compIdx = 0;
+        for (int i = 0; i < leftDicts.size(); i++) {
+            elIdx = 0;
+            for (String el : totalLeft.keySet()) {
+                int elementsInComp = 0;
+
+                if (leftDicts.get(i).containsKey(el))
+                    elementsInComp = leftDicts.get(i).get(el);
+
+                data[elIdx][compIdx] = elementsInComp;
+                elIdx++;
+            }
+            compIdx++;
+        }
+
+        for (int i = 0; i < rightDicts.size(); i++) {
+            elIdx = 0;
+            for (String el : totalLeft.keySet()) {
+                int elementsInComp = 0;
+
+                if (rightDicts.get(i).containsKey(el))
+                    elementsInComp = rightDicts.get(i).get(el);
+
+                data[elIdx][compIdx] = elementsInComp;
+                elIdx++;
+            }
+            compIdx++;
+        }
+
+        SimpleMatrix sm = new SimpleMatrix(data);
+        LOGGER.i("EQUATION MATRIX " + sm.toString());
+        DenseMatrix64F red = CommonOps.rref(sm.getMatrix(), -1, null);
+        LOGGER.i("REDUCED MATRIX: " + red.toString());
+
+        /*
 
         List<Integer> leftCoef = new ArrayList<>();
         List<Integer> rightCoef = new ArrayList<>();
@@ -278,6 +416,9 @@ public class RecognitionListItem {
         LOGGER.i(leftCoef.toString() + "     " + rightCoef.toString());
 
         // pridat
+        */
+
+
     }
 
     /* 0 no 1 yes 2 is balanced*/
@@ -309,7 +450,7 @@ public class RecognitionListItem {
 
     private boolean isStringInteger(String str) {
         char ch = str.charAt(0);
-        if ('0' <= ch && ch <= '9')
+        if ('2' <= ch && ch <= '9')
             return true;
         return false;
     }

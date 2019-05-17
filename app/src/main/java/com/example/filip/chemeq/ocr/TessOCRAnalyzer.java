@@ -9,12 +9,13 @@ import android.util.Pair;
 
 import com.example.filip.chemeq.Recognition;
 import com.example.filip.chemeq.detecting.ChemBase;
+import com.example.filip.chemeq.detecting.ChemicalEquation;
+import com.example.filip.chemeq.detecting.Compound;
 import com.example.filip.chemeq.detecting.RecognitionListItem;
 import com.example.filip.chemeq.util.Logger;
 import com.googlecode.tesseract.android.ResultIterator;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
-import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
@@ -23,10 +24,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class TessOCR {
+public class TessOCRAnalyzer {
 
 
-    private static final Logger LOGGER = new Logger(TessOCR.class.getName());
+    private static final Logger LOGGER = new Logger(TessOCRAnalyzer.class.getName());
     private TessBaseAPI tessBaseAPI;
     private final String lang = "chem";
     private static final String DATA_PATH = Environment.getExternalStorageDirectory().toString() + "/Tess/" ;
@@ -43,7 +44,7 @@ public class TessOCR {
 
 
 
-    public TessOCR(Bitmap image, Matrix canvasToFrame) {
+    public TessOCRAnalyzer(Bitmap image, Matrix canvasToFrame) {
         // init tesseract
         tessBaseAPI = new TessBaseAPI();
         LOGGER.i("DATA_PATH: " + DATA_PATH);
@@ -52,10 +53,13 @@ public class TessOCR {
         // tessBaseAPI.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
         tessBaseAPI.setVariable("tessedit_char_blacklist", "·");
 
+        /*
+
         this.canvasToFrame = canvasToFrame;
         canvasToFrame.invert(frameToCanvas);
         rotate = new Matrix();
         rotate.postRotate(90);
+        */
 
         // threshold the image
         /*
@@ -93,14 +97,6 @@ public class TessOCR {
 
     }
 
-    public void adjustResultsInBitmap(List<Recognition> results){
-        for (Recognition recognition : results) {
-            RectF rect = recognition.getLocation();
-            canvasToFrame.mapRect(rect);
-
-            int left = (int) rect.left;
-        }
-    }
 
     public void doOCR(Bitmap img, List<Recognition> results){
         tessBaseAPI.setImage(img);
@@ -112,6 +108,62 @@ public class TessOCR {
                     (int)(rect.bottom - rect.top));
             result.setTitle(tessBaseAPI.getUTF8Text());
         }
+    }
+
+    public ChemicalEquation testOCR(Bitmap bitmap) {
+        tessBaseAPI.setImage(bitmap);
+        String text = tessBaseAPI.getUTF8Text();
+
+
+        // create a list of all choices at the level of single characters
+        int level = TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
+
+        ResultIterator ri = tessBaseAPI.getResultIterator();
+
+        LOGGER.i("Result iterator retrieved");
+        allChoices = new ArrayList<>();
+
+        if (text.equals(""))
+            return new ChemicalEquation();
+
+        do {
+
+            List<Pair<String, Double>> characterChoices = ri.getChoicesAndConfidence(level-1);
+            allChoices.add(characterChoices);
+            LOGGER.i("Character choices received");
+        } while (ri.next(level));
+        ri.delete();
+
+        return parseChemicalEquation();
+
+    }
+
+    public List<Compound> test2OCR(Bitmap bitmap) {
+        tessBaseAPI.setImage(bitmap);
+        String text = tessBaseAPI.getUTF8Text();
+
+
+        // create a list of all choices at the level of single characters
+        int level = TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
+
+        ResultIterator ri = tessBaseAPI.getResultIterator();
+
+        LOGGER.i("Result iterator retrieved");
+        allChoices = new ArrayList<>();
+
+        if (text.equals(""))
+            return new ArrayList<>();
+
+        do {
+
+            List<Pair<String, Double>> characterChoices = ri.getChoicesAndConfidence(level-1);
+            allChoices.add(characterChoices);
+            LOGGER.i("Character choices received");
+        } while (ri.next(level));
+        ri.delete();
+
+        return parseCompound(State.START, 0, new Compound());
+
     }
 
     public RecognitionListItem doOCRonSingleExample(Bitmap bitmap) {
@@ -133,6 +185,7 @@ public class TessOCR {
         // INIT THE VARIABLES REQUIRED FOR THE STATE MACHINE
         equation = "";
         parsing_ended = false;
+
 
         // try to parse as a mathematical equation
         a = 0; b = 0; succ = false;
@@ -159,6 +212,7 @@ public class TessOCR {
         recognitionListItem.setEquation(ret);
         recognitionListItem.setLeftSideCompounds(leftSideCompounds);
         recognitionListItem.setRightSideCompounds(rightSideCompounds);
+
 
         return recognitionListItem;
     }
@@ -452,7 +506,220 @@ public class TessOCR {
     }
 
 
-    private Bitmap rotateBitmap(Bitmap bitmap){
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), rotate, true);
+
+    private ChemicalEquation parseChemicalEquation() {
+        String raw = tessBaseAPI.getUTF8Text();
+        ChemicalEquation chemeq = new ChemicalEquation();
+        chemeq.setRawDetection(raw);
+        int pos = 0;
+        String endCharacter = null;
+        // leftside
+        do {
+            List<Compound> possibleCompounds = parseCompound(State.START, pos, new Compound());
+            chemeq.addLeftPossibleCompounds(possibleCompounds);
+            Compound resultCompound = possibleCompounds.get(0);
+            for (Compound compound : possibleCompounds) {
+                String trivName = ChemBase.getNameOfFormula(compound.getCompound());
+                compound.setTrivName(trivName);
+                if (!trivName.equals("unknown")){
+                    resultCompound = compound;
+                    break;
+                }
+            }
+            chemeq.addLeftCompound(resultCompound);
+            pos = resultCompound.getEndPos()+1;
+            endCharacter = resultCompound.getEndCharacter();
+
+        } while (endCharacter.equals("+"));
+
+        //there is no right side omg lol
+        if (!endCharacter.equals("→"))
+            return chemeq;
+
+        // right side
+        do {
+            List<Compound> possibleCompounds = parseCompound(State.START, pos, new Compound());
+            chemeq.addRightPossibleCompounds(possibleCompounds);
+            Compound resultCompound = possibleCompounds.get(0);
+            for (Compound compound : possibleCompounds) {
+                String trivName = ChemBase.getNameOfFormula(compound.getCompound());
+                compound.setTrivName(trivName);
+                if (!trivName.equals("unknown")){
+                    resultCompound = compound;
+                    break;
+                }
+            }
+            chemeq.addRighCompound(resultCompound);
+            pos = resultCompound.getEndPos()+1;
+            endCharacter = resultCompound.getEndCharacter();
+        } while (endCharacter.equals("+"));
+
+        return chemeq;
+    }
+
+    /**
+     * Returns list of syntactically correct compounds
+     * @param state
+     * @param pos
+     * @param compound
+     */
+    private List<Compound> parseCompound(State state, int pos, Compound compound) {
+        List<Compound> possibleCompounds = new ArrayList<>();
+        if (pos == allChoices.size()){
+            if (state == State.ELEM || state == State.IDX){
+                compound.setParsed(true);
+            }
+            compound.setEndPos(pos);
+            possibleCompounds.add(compound);
+            return possibleCompounds;
+        }
+
+
+        for (int i = 0; i < allChoices.get(pos).size(); i++) {
+            String character = allChoices.get(pos).get(i).first;
+            Compound tempCompound = compound.getCopy();
+            tempCompound.addCharacter(character);
+            tempCompound.addConfidence(allChoices.get(pos).get(i).second);
+
+            if (character.equals("+") || character.equals("→")){ // ma tu byt to posledni??
+                LOGGER.i("Read + or arrow, so going to START " + character + "\n");
+                if (state == State.ELEM || state == State.IDX) {
+                    compound.setParsed(true);
+                }
+                compound.setEndPos(pos);
+                compound.setEndCharacter(character);
+                possibleCompounds.add(compound);
+                return possibleCompounds;
+            }
+
+            if (character.equals("(")) {
+                if (state != State.NO_ELEM) {
+                    tempCompound.setParenthesis(true);
+                    List<Compound> parsed = parseCompound(State.START, pos+1, tempCompound);
+                    possibleCompounds.addAll(parsed);
+                }
+                continue;
+            }
+            if (character.equals(")")) {
+                if (tempCompound.isParenthesis() && (state == State.ELEM || state == State.IDX)) {
+                    tempCompound.setParenthesis(false);
+                    List<Compound> parsed = parseCompound(State.ELEM, pos+1, tempCompound);
+                    possibleCompounds.addAll(parsed);
+                }
+                continue;
+            }
+
+            switch (state) {
+                // number
+                case START:
+                    if (isStringInteger(character)) {
+                        List<Compound> parsed = parseCompound(State.NUM, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    // uppercase is element
+                    if (isStringElement(character)) {
+                        List<Compound> parsed = parseCompound(State.ELEM, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    // uppercase not element
+                    else if (isStringUppercaseLetter(character)) {
+                        List<Compound> parsed = parseCompound(State.NO_ELEM, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    break;
+
+                case NUM:
+                    // uppercase is element
+                    if (isStringElement(character)) {
+                        List<Compound> parsed = parseCompound(State.ELEM, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    // uppercase not element
+                    else if (isStringUppercaseLetter(character)) {
+                        List<Compound> parsed = parseCompound(State.NO_ELEM, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    break;
+
+                case ELEM:
+                    // lowercase which is an element with the previous
+                    if (isStringLowercaseLetter(character)) {
+                        String lastTwo = compound.getLastCharacter() + character;
+                        if (isStringElement(lastTwo)) {
+                            List<Compound> parsed = parseCompound(State.ELEM, pos+1, tempCompound);
+                            possibleCompounds.addAll(parsed);
+                        }
+                    }
+                    // uppercase is element
+                    if (isStringElement(character)) {
+                        List<Compound> parsed = parseCompound(State.ELEM, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    // uppercase not element
+                    else if (isStringUppercaseLetter(character)) {
+                        List<Compound> parsed = parseCompound(State.NO_ELEM, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    // index
+                    if (isStringIndex(character)) {
+                        List<Compound> parsed = parseCompound(State.IDX, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    break;
+
+                case NO_ELEM:
+                    // lowercase
+                    if (isStringLowercaseLetter(character)) {
+                        String lastTwo = compound.getLastCharacter() + character;
+                        if (isStringElement(lastTwo)) {
+                            List<Compound> parsed = parseCompound(State.ELEM, pos+1, tempCompound);
+                            possibleCompounds.addAll(parsed);
+                        }
+                    }
+                    break;
+
+                case IDX:
+                    // uppercase is element
+                    if (isStringElement(character)) {
+                        List<Compound> parsed = parseCompound(State.ELEM, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    // uppercase not element
+                    else if (isStringUppercaseLetter(character)) {
+                        List<Compound> parsed = parseCompound(State.NO_ELEM, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+                    // index
+                    if (isStringIndex(character)) {
+                        List<Compound> parsed = parseCompound(State.IDX, pos+1, tempCompound);
+                        possibleCompounds.addAll(parsed);
+                    }
+
+            }
+        }
+
+        // if there are some successfully parsed compounds return
+        // else try to leave out character on this position
+        if (possibleCompounds.size() != 0) return possibleCompounds;
+        return parseCompound(state, pos+1, compound);
+    }
+
+    private boolean isStringInteger(String str) {
+        char ch = str.charAt(0);
+        if ('2' <= ch && ch <= '9')
+            return true;
+        return false;
+    }
+
+    private boolean isStringUppercaseLetter(String str) {
+        if ('A' <= str.charAt(0) && str.charAt(0) <= 'Z')
+            return true;
+        return false;
+    }
+
+    private boolean isStringLowercaseLetter(String str) {
+        if ('a' <= str.charAt(0) && str.charAt(0) <= 'z')
+            return true;
+        return false;
     }
 }

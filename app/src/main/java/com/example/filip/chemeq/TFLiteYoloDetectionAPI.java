@@ -172,7 +172,7 @@ public class TFLiteYoloDetectionAPI implements Classifier {
 
     private List<BoundingBox> processOutput(float[][][][] tfLiteOutput) {
         float[][][] tensor = tfLiteOutput[0];
-        float blockSize = 32f; //416 / 13
+        float blockSize = 32f; // 416 / 13, the width of a cell
 
         ArrayList<BoundingBox> allPredictions = new ArrayList<>();
 
