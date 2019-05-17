@@ -22,6 +22,16 @@ public class RecognitionListItem {
     private List<String> indexes = new ArrayList<>(Arrays.asList(index_arr));
     private static final Logger LOGGER = new Logger(RecognitionListItem.class.getName());
 
+    private Equation equationTest;
+
+    public void setEquationTest(Equation equation) {
+        this.equationTest = equation;
+    }
+
+    public Equation getEquationTest() {
+        return this.equationTest;
+    }
+
 
     private boolean math;
 
@@ -61,6 +71,7 @@ public class RecognitionListItem {
 
     /** this is the main setter, which is used to create valid list items **/
     public void setAll(RecognitionListItem recognitionListItem) {
+
         setEquation(recognitionListItem.getEquation());
         setLeftSideCompounds(recognitionListItem.getLeftSideCompounds());
         setRightSideCompounds(recognitionListItem.getRightSideCompounds());
@@ -106,7 +117,7 @@ public class RecognitionListItem {
     }
 
     /** vycisleni rovnice na rychlo aby se nereklo ze to nemam lol**/
-    // TODO fakin zefektivni tohle blbecku
+    // TODO make it more efficient somehow
     private void balanceEquation() {
         Map<String, Integer> totalLeft = new HashMap<>();
         Map<String, Integer> totalRight = new HashMap<>();

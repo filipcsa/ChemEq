@@ -11,6 +11,7 @@ import com.example.filip.chemeq.Recognition;
 import com.example.filip.chemeq.detecting.ChemBase;
 import com.example.filip.chemeq.detecting.ChemicalEquation;
 import com.example.filip.chemeq.detecting.Compound;
+import com.example.filip.chemeq.detecting.Equation;
 import com.example.filip.chemeq.detecting.RecognitionListItem;
 import com.example.filip.chemeq.util.Logger;
 import com.googlecode.tesseract.android.ResultIterator;
@@ -110,7 +111,7 @@ public class TessOCRAnalyzer {
         }
     }
 
-    public ChemicalEquation testOCR(Bitmap bitmap) {
+    public Equation testOCR(Bitmap bitmap) {
         tessBaseAPI.setImage(bitmap);
         String text = tessBaseAPI.getUTF8Text();
 
@@ -124,7 +125,7 @@ public class TessOCRAnalyzer {
         allChoices = new ArrayList<>();
 
         if (text.equals(""))
-            return new ChemicalEquation();
+            return new Equation();
 
         do {
 
@@ -507,9 +508,9 @@ public class TessOCRAnalyzer {
 
 
 
-    private ChemicalEquation parseChemicalEquation() {
+    private Equation parseChemicalEquation() {
         String raw = tessBaseAPI.getUTF8Text();
-        ChemicalEquation chemeq = new ChemicalEquation();
+        Equation chemeq = new Equation();
         chemeq.setRawDetection(raw);
         int pos = 0;
         String endCharacter = null;
@@ -532,7 +533,7 @@ public class TessOCRAnalyzer {
 
         } while (endCharacter.equals("+"));
 
-        //there is no right side omg lol
+        // shiiit there is no right side
         if (!endCharacter.equals("→"))
             return chemeq;
 

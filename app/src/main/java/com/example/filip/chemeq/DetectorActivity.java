@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 
 import com.example.filip.chemeq.detecting.AdjustableRecognitionRect;
+import com.example.filip.chemeq.detecting.Equation;
 import com.example.filip.chemeq.detecting.RecognitionAdapter;
 import com.example.filip.chemeq.detecting.RecognitionListItem;
 import com.example.filip.chemeq.ocr.TessOCRAnalyzer;
@@ -213,7 +214,8 @@ public class DetectorActivity extends AppCompatActivity {
         }
         RecognitionListItem rli = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
         // tessOCR.doOCR4Rectangle(newRect);
-
+        Equation equation = tessOCR.testOCR(rotateBitmap(croppedResult));
+        recognitionListItem.setEquationTest(equation);
         recognitionListItem.setAll(rli);
         listAdapter.notifyDataSetChanged();
         LOGGER.i("There are " + listAdapter.getCount() + " in list adapter");

@@ -12,6 +12,7 @@ import android.support.test.runner.AndroidJUnit4;
 import com.example.filip.chemeq.detecting.ChemBase;
 import com.example.filip.chemeq.detecting.ChemicalEquation;
 import com.example.filip.chemeq.detecting.Compound;
+import com.example.filip.chemeq.detecting.Equation;
 import com.example.filip.chemeq.ocr.TessOCRAnalyzer;
 
 import org.json.JSONException;
@@ -86,7 +87,7 @@ public class TessOCRAnalyzerTest {
                 e.printStackTrace();
             }
             Bitmap bitmap = BitmapFactory.decodeStream(testInput);
-            ChemicalEquation chemeq = t.testOCR(bitmap);
+            Equation chemeq = t.testOCR(bitmap);
             // log += "Detected: " + chemeq.getFullEquation() + "\n";
 
             // READ ANNOTATION
@@ -104,7 +105,9 @@ public class TessOCRAnalyzerTest {
                 e.printStackTrace();
             }
 
-            /*
+            log += "Expected: " + expected;
+            log += "Actual: " + chemeq.getFullEquation();
+
             // VYPISY
             log += "Possible Left: \n";
             for (List<Compound> possibleLeft : chemeq.getAllPossibleLeft()) {
@@ -121,7 +124,7 @@ public class TessOCRAnalyzerTest {
                 }
                 log += "\n-\n";
             }
-            */
+
 
             /*
             if (expected == null || !expected.contains("→"))
@@ -133,8 +136,6 @@ public class TessOCRAnalyzerTest {
             else {
                 totalDistance += calculate(chemeq.getFullEquation(), expected);
                 log += "ERROR AT " + testSample;
-                log += "Expected: " + expected;
-                log += "Actual: " + chemeq.getFullEquation();
             }
 
             if (chemeq.getRawDetection().equals(expected))
@@ -143,7 +144,7 @@ public class TessOCRAnalyzerTest {
 
 
             // COUNTING COMPOUNDS
-            String actual = chemeq.getRawDetection();
+            String actual = chemeq.getFullEquation();
             String actualLeft = actual.split(" → ")[0];
             String actualRight = "";
             if (actual.split(" → ").length > 1)
@@ -291,7 +292,7 @@ public class TessOCRAnalyzerTest {
         InputStream testInput = assetManager.open(filename);
 
         Bitmap bitmap = BitmapFactory.decodeStream(testInput);
-        ChemicalEquation chemeq = t.testOCR(bitmap);
+        Equation chemeq = t.testOCR(bitmap);
 
         /*
         string += "Left side compounds: " + chemeq.getLeftCompounds().size() + "\n";

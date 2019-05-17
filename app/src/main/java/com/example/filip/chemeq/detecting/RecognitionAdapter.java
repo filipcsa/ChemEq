@@ -70,15 +70,15 @@ public class RecognitionAdapter extends ArrayAdapter<RecognitionListItem> {
         }
 
         // the left side of the equation
-        Iterator it = currentRecognition.getLeftSideCompounds().iterator();
+        Iterator<Compound> it = currentRecognition.getEquationTest().getLeftCompounds().iterator();
         while (it.hasNext()) {
-            Pair<String, String> compound = (Pair<String, String>) it.next();
+            Compound compound = it.next();
             TextView formulaName = initializeTextView();
             TextView formula = initializeTextView();
 
-            String fn = compound.second.split(",")[0];
+            String fn = compound.getTrivName().split(",")[0];
             formulaName.setText(fn);
-            formula.setText(compound.first);
+            formula.setText(compound.getCompound());
 
             formulaNamesRow.addView(formulaName);
             formulasRow.addView(formula);
@@ -109,15 +109,15 @@ public class RecognitionAdapter extends ArrayAdapter<RecognitionListItem> {
         }
 
         // the right side of the equation
-        it = currentRecognition.getRightSideCompounds().iterator();
+        it = currentRecognition.getEquationTest().getRightCompounds().iterator();
         while (it.hasNext()) {
-            Pair<String, String> compound = (Pair<String, String>) it.next();
+            Compound compound = it.next();
             TextView formulaName = initializeTextView();
             TextView formula = initializeTextView();
 
-            String fn = compound.second.split(",")[0];
+            String fn = compound.getTrivName().split(",")[0];
             formulaName.setText(fn);
-            formula.setText(compound.first);
+            formula.setText(compound.getCompound());
 
             formulaNamesRow.addView(formulaName);
             formulasRow.addView(formula);
