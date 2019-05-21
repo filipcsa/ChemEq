@@ -9,6 +9,7 @@ import android.os.Environment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -98,6 +99,11 @@ public class DetectorActivity extends AppCompatActivity {
 
         Button saveBtn = findViewById(R.id.saveButton);
         saveBtn.setOnClickListener(v -> onSaveButton());
+
+    }
+
+    public void looseFocus() {
+        listAdapter.looseFocus();
     }
 
     /** On add rect button clicked **/
@@ -212,11 +218,11 @@ public class DetectorActivity extends AppCompatActivity {
             LOGGER.e(e, "Wrong coordinates of rectangle");
             return;
         }
-        RecognitionListItem rli = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
+        // RecognitionListItem rli = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
         // tessOCR.doOCR4Rectangle(newRect);
         Equation equation = tessOCR.testOCR(rotateBitmap(croppedResult));
         recognitionListItem.setEquationTest(equation);
-        recognitionListItem.setAll(rli);
+        // recognitionListItem.setAll(rli);
         listAdapter.notifyDataSetChanged();
         LOGGER.i("There are " + listAdapter.getCount() + " in list adapter");
     }

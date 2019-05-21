@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:clickable="true"
+    android:focusableInTouchMode="true"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainLinearLayout"
     android:layout_width="match_parent"
@@ -14,11 +16,14 @@
         android:layout_height="535dp">
 
         <ImageView
+            android:focusableInTouchMode="true"
             android:id="@+id/imageView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
         <com.example.filip.chemeq.detecting.DrawView
+            android:focusable="true"
+            android:focusableInTouchMode="true"
             android:id="@+id/drawView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
@@ -64,6 +69,7 @@
 
     <ListView
         android:id="@+id/listView"
+        android:focusableInTouchMode="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 </LinearLayout>

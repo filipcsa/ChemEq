@@ -6,6 +6,10 @@ import java.util.List;
 
 public class Equation {
 
+    public Equation(Type type) {
+        this.equationType = type;
+    }
+
     public enum Type{
         CHEM,
         MATH
@@ -19,6 +23,7 @@ public class Equation {
 
     // MATH
     int a, b;
+    private char op;
 
     // CHEM
     private String rawDetection = "";
@@ -56,19 +61,24 @@ public class Equation {
 
     public String getFullEquation() {
         String eq = "";
-        Iterator<Compound> it = leftCompounds.iterator();
-        while (it.hasNext()) {
-            eq += it.next().getCompound();
-            if (it.hasNext()) eq += " + ";
+        if (equationType == Type.CHEM) {
+            Iterator<Compound> it = leftCompounds.iterator();
+            while (it.hasNext()) {
+                eq += it.next().getCompound();
+                if (it.hasNext()) eq += " + ";
+            }
+
+            if (rightCompounds.size() > 0)
+                eq += " → ";
+
+            it = rightCompounds.iterator();
+            while (it.hasNext()) {
+                eq += it.next().getCompound();
+                if (it.hasNext()) eq += " + ";
+            }
         }
-
-        if (rightCompounds.size() > 0)
-            eq += " → ";
-
-        it = rightCompounds.iterator();
-        while (it.hasNext()) {
-            eq += it.next().getCompound();
-            if (it.hasNext()) eq += " + ";
+        else {
+            eq += a + " " + op + b + " = ";
         }
 
         return eq;
@@ -88,6 +98,34 @@ public class Equation {
 
     public List<List<Compound>> getAllPossibleRight() {
         return allPossibleRight;
+    }
+
+    public void setA(int a) {
+        this.a = a;
+    }
+
+    public void setB(int b) {
+        this.b = b;
+    }
+
+    public void setOp(char op) {
+        this.op = op;
+    }
+
+    public int getA() {
+        return a;
+    }
+
+    public int getB() {
+        return b;
+    }
+
+    public char getOp() {
+        return op;
+    }
+
+    public void equationEditedCallback(String newEq) {
+
     }
 
 }

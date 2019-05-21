@@ -18,6 +18,7 @@
         -->
 
         <TableLayout
+            android:id="@+id/table"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="10dp">
@@ -30,5 +31,11 @@
                 android:id="@+id/formulas">
             </TableRow>
         </TableLayout>
+        <EditText
+            android:id="@+id/editEquation"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:inputType="textMultiLine|textCapSentences"/>
     </LinearLayout>
 </HorizontalScrollView>

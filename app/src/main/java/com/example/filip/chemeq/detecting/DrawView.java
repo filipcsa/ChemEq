@@ -157,6 +157,8 @@ public class DrawView extends View {
 
         LOGGER.i(X + " " + Y);
 
+        da.looseFocus();
+
         switch (eventaction) {
 
             case MotionEvent.ACTION_DOWN:

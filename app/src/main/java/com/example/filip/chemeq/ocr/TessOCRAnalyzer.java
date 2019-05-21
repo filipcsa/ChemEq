@@ -21,6 +21,8 @@ import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -54,63 +56,10 @@ public class TessOCRAnalyzer {
         // tessBaseAPI.setPageSegMode(TessBaseAPI.PageSegMode.PSM_SINGLE_LINE);
         tessBaseAPI.setVariable("tessedit_char_blacklist", "·");
 
-        /*
-
-        this.canvasToFrame = canvasToFrame;
-        canvasToFrame.invert(frameToCanvas);
-        rotate = new Matrix();
-        rotate.postRotate(90);
-        */
-
-        // threshold the image
-        /*
-        Mat imageMat = new Mat();
-        Utils.bitmapToMat(this.image, imageMat);
-        Imgproc.cvtColor(imageMat, imageMat, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.adaptiveThreshold(imageMat, imageMat, 255,
-                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 51, 4);
-        Utils.matToBitmap(imageMat, this.image);
-        tessBaseAPI.setImage(rotateBitmap(this.image));
-        */
-
-        // test();
-    }
-
-    private void test(){
-        // tess before any tweaks
-        Bitmap testImg = BitmapFactory.decodeFile(DATA_PATH + "test7.png");
-        tessBaseAPI.setImage(testImg);
-        String text = tessBaseAPI.getUTF8Text();
-        LOGGER.i("Before tweaks: " + text);
-        tessBaseAPI.getResultIterator().getChoicesAndConfidence(TessBaseAPI.PageIteratorLevel.RIL_WORD);
-
-        // first tweak
-        Mat imgMat = new Mat();
-        Utils.bitmapToMat(testImg, imgMat);
-        Imgproc.cvtColor(imgMat, imgMat, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.adaptiveThreshold(imgMat, imgMat, 255,
-                Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 31, 4);
-        Utils.matToBitmap(imgMat, testImg);
-
-        tessBaseAPI.setImage(testImg);
-        text = tessBaseAPI.getUTF8Text();
-        LOGGER.i("After first tweak: " + text);
-
     }
 
 
-    public void doOCR(Bitmap img, List<Recognition> results){
-        tessBaseAPI.setImage(img);
-        for (Recognition result : results){
-            RectF rect = result.getLocation();
-
-            tessBaseAPI.setRectangle((int)rect.left, (int)rect.top,
-                    (int)(rect.right - rect.left),
-                    (int)(rect.bottom - rect.top));
-            result.setTitle(tessBaseAPI.getUTF8Text());
-        }
-    }
-
+    Instant parseStart;
     public Equation testOCR(Bitmap bitmap) {
         tessBaseAPI.setImage(bitmap);
         String text = tessBaseAPI.getUTF8Text();
@@ -125,7 +74,7 @@ public class TessOCRAnalyzer {
         allChoices = new ArrayList<>();
 
         if (text.equals(""))
-            return new Equation();
+            return new Equation(Equation.Type.CHEM);
 
         do {
 
@@ -135,88 +84,29 @@ public class TessOCRAnalyzer {
         } while (ri.next(level));
         ri.delete();
 
+        // try to parse as a mathematical equation
+        parseStart = Instant.now();
+        a = 0; b = 0; succ = false;
+        tryToParseAsMathEq(MathState.START, 0);
+        if (succ) {
+            Equation equation = new Equation(Equation.Type.MATH);
+            equation.setA(a);
+            equation.setB(b);
+            equation.setOp(op);
+            return equation;
+        }
+
+        // LOG ALL CHOICES
+        LOGGER.i("ALL CHOICES: " + allChoices.toString());
+
+        // whena parsing nonsense, it might take really long to determine that there is no chemical equation
+        // so after like 200ms i give up the parsing
+
+        parseStart = Instant.now();
         return parseChemicalEquation();
 
     }
 
-    public List<Compound> test2OCR(Bitmap bitmap) {
-        tessBaseAPI.setImage(bitmap);
-        String text = tessBaseAPI.getUTF8Text();
-
-
-        // create a list of all choices at the level of single characters
-        int level = TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
-
-        ResultIterator ri = tessBaseAPI.getResultIterator();
-
-        LOGGER.i("Result iterator retrieved");
-        allChoices = new ArrayList<>();
-
-        if (text.equals(""))
-            return new ArrayList<>();
-
-        do {
-
-            List<Pair<String, Double>> characterChoices = ri.getChoicesAndConfidence(level-1);
-            allChoices.add(characterChoices);
-            LOGGER.i("Character choices received");
-        } while (ri.next(level));
-        ri.delete();
-
-        return parseCompound(State.START, 0, new Compound());
-
-    }
-
-    public RecognitionListItem doOCRonSingleExample(Bitmap bitmap) {
-        tessBaseAPI.setImage(bitmap);
-        String text = tessBaseAPI.getUTF8Text();
-
-        // create a list of all choices at the level of single characters
-        int level = TessBaseAPI.PageIteratorLevel.RIL_SYMBOL;
-        ResultIterator ri = tessBaseAPI.getResultIterator();
-        LOGGER.i("Result iterator retrieved");
-        allChoices = new ArrayList<>();
-        do {
-            List<Pair<String, Double>> characterChoices = ri.getChoicesAndConfidence(level-1);
-            allChoices.add(characterChoices);
-            LOGGER.i("Character choices received");
-        } while (ri.next(level));
-        ri.delete();
-
-        // INIT THE VARIABLES REQUIRED FOR THE STATE MACHINE
-        equation = "";
-        parsing_ended = false;
-
-
-        // try to parse as a mathematical equation
-        a = 0; b = 0; succ = false;
-        tryToParseAsMathEq(MathState.START, 0);
-        if (succ) {
-            LOGGER.i("MATH EQ PARSED: " + a + op + b);
-            RecognitionListItem recognitionListItem = new RecognitionListItem();
-            recognitionListItem.setMath(true);
-            recognitionListItem.setA(a);
-            recognitionListItem.setB(b);
-            recognitionListItem.setOp(op);
-            return  recognitionListItem;
-        }
-        stateMachine(State.START, 0);
-        fillTheNamesOfFormulas();
-
-        equation = equation.replace("+", " + ");
-        equation = equation.replace("→", " → ");
-
-        String ret = "Raw detection: " + text + "\n";
-        ret += "After parsing: " + equation;
-
-        RecognitionListItem recognitionListItem = new RecognitionListItem();
-        recognitionListItem.setEquation(ret);
-        recognitionListItem.setLeftSideCompounds(leftSideCompounds);
-        recognitionListItem.setRightSideCompounds(rightSideCompounds);
-
-
-        return recognitionListItem;
-    }
 
     /** bordel pro parsovani cmatematickejch rovnic aaaa **/
     private boolean succ;
@@ -234,6 +124,12 @@ public class TessOCRAnalyzer {
             if (state == MathState.SECOND){
                 succ = true;
             }
+            return;
+        }
+        
+        Instant now = Instant.now();
+        long duration = Duration.between(parseStart, now).toMillis();
+        if (duration > 100) {
             return;
         }
 
@@ -333,161 +229,7 @@ public class TessOCRAnalyzer {
     private List<Pair<String, String>> leftSideCompounds;
     private List<Pair<String, String>> rightSideCompounds;
     private String equation = "";
-    private boolean parsing_ended = false;
-    private boolean parenthesis = false;
 
-    /** A crazy complicated recursive state machine for parsing the chemical equation by characters **/
-    private void stateMachine( State state, int pos) {
-        // end condition
-        if (pos == allChoices.size()){
-            if (state == State.ELEM || state == State.IDX){
-            LOGGER.i("PARSED EQUATION: " + equation);
-            parsing_ended = true;
-            }
-            return;
-        }
-
-        for (int i = 0; i < allChoices.get(pos).size(); i++) {
-            char character = allChoices.get(pos).get(i).first.charAt(0);
-            LOGGER.i("Character: " + character + " on position :" + pos);
-            equation += character;
-            LOGGER.i("Equation: " + equation);
-
-            // + or → or ending , its here instead and not checking IDX and ELEM so the parsing is not that strict
-            if (character == '+' || character == '→' || pos == allChoices.size()-1){
-                LOGGER.i("Read + or arrow, so going to START " + character + "\n");
-                stateMachine(State.START, pos+1);
-            }
-
-            switch (state) {
-
-                case START:
-                    // number
-                    if ('2' <= character && character <= '9') {
-                        LOGGER.i("From START to NUM on" + character + "\n");
-                        stateMachine(State.NUM, pos+1);
-                    }
-                    // uppercase, is element
-                    if (isStringElement(String.valueOf(character))) {
-                        LOGGER.i("From START to ELEM on" + character + "\n");
-                        stateMachine(State.ELEM, pos+1);
-                    }
-                    // uppercase, not element
-                    else if ('A' <= character && character <= 'Z'){
-                        LOGGER.i("From START to NO_ELEM on" + character + "\n");
-                        stateMachine(State.NO_ELEM, pos+1);
-                    }
-                    // parenthesis
-                    if (character == '('){
-                        LOGGER.i("From START to NUM on " + character + "\n");
-                        parenthesis = true;
-                        stateMachine(State.NUM, pos+1);
-                    }
-                    break;
-
-                case NUM:
-                    // uppercase element
-                    if (isStringElement(String.valueOf(character))) {
-                        LOGGER.i("From NUM to ELEM on " + character + "\n");
-                        stateMachine(State.ELEM, pos+1);
-                    }
-                    // uppercase no element
-                    else if ('A' <= character && character <= 'Z'){
-                        LOGGER.i("From NUM to NO_ELEM on " + character + "\n");
-                        stateMachine(State.NO_ELEM, pos+1);
-                    }
-                    // parenthesis
-                    if (character == '('){
-                        LOGGER.i("From NUM to NUM on " + character + "\n");
-                        parenthesis = true;
-                        stateMachine(State.NUM, pos+1);
-                    }
-                    break;
-
-                case ELEM:
-                    // lowercase which is an element together with the previous letter
-                    if ('a' <= character && character <= 'z'){
-                        if (equation.length() == 1) continue;
-                        String prev = equation.substring(equation.length() - 2, equation.length()-1);
-                        String lastTwo = prev + character;
-                        if (isStringElement(lastTwo)) {
-                            LOGGER.i("From ELEM to ELEM on " + character + "\n");
-                            stateMachine(State.ELEM, pos+1);
-                        }
-                    }
-                    // uppercase, is element
-                    if (isStringElement(String.valueOf(character))) {
-                        LOGGER.i("From ELEM to ELEM on" + character + "\n");
-                        stateMachine(State.ELEM, pos+1);
-                    }
-                    // uppercase, not element
-                    else if ('A' <= character && character <= 'Z') {
-                        LOGGER.i("From ELEM to NO_ELEM");
-                        stateMachine(State.NO_ELEM, pos+1);
-                    }
-                    // index
-                    if (isStringIndex(String.valueOf(character))) {
-                        LOGGER.i("From ELEM to IDX on " + character + "\n");
-                        stateMachine(State.IDX, pos+1);
-                    }
-                    // parenthesis
-                    if (character == '('){
-                        LOGGER.i("From ELEM to NUM on " + character + "\n");
-                        parenthesis = true;
-                        stateMachine(State.NUM, pos+1);
-                    }
-                    // close parenthesis
-                    if (character == ')' && parenthesis) {
-                        LOGGER.i("From ELEM to ELEM on " + character + "\n");
-                        parenthesis = false;
-                        stateMachine(State.ELEM, pos+1);
-                    }
-                    break;
-
-                case NO_ELEM:
-                    // lowercase which is an element together with the previous letter
-                    if ('a' <= character && character <= 'z'){
-                        if (equation.length() == 1) continue;
-                        String prev = equation.substring(equation.length() - 2, equation.length()-1);
-                        String lastTwo = prev + character;
-                        if (isStringElement(lastTwo)) {
-                            LOGGER.i("From NO_ELEM to ELEM on " + character + "\n");
-                            stateMachine(State.ELEM, pos+1);
-                        }
-                    }
-                    break;
-
-                case IDX:
-                    // uppercase, is element
-                    if (isStringElement(String.valueOf(character))) {
-                        LOGGER.i("From IDX to ELEM on" + character + "\n");
-                        stateMachine(State.ELEM, pos+1);
-                    }
-                    // uppercase, not element
-                    else if ('A' <= character && character <= 'Z') {
-                        LOGGER.i("From IDX to NO_ELEM");
-                        stateMachine(State.NO_ELEM, pos+1);
-                    }
-                    // parenthesis
-                    if (character == '('){
-                        LOGGER.i("From IDX to NUM on " + character + "\n");
-                        parenthesis = true;
-                        stateMachine(State.NUM, pos+1);
-                    }
-                    // close parenthesis
-                    if (character == ')' && parenthesis) {
-                        LOGGER.i("From IDX to ELEM on " + character + "\n");
-                        parenthesis = false;
-                        stateMachine(State.ELEM, pos+1);
-                    }
-            }
-
-            if (parsing_ended) return;
-            equation = equation.substring(0, equation.length() - 1);
-        }
-        // no character fits so leave out
-        stateMachine(state, pos+1);
-    }
 
     private boolean isStringElement(String str) {
         LOGGER.i("Checking if " + str + " is an element");
@@ -509,14 +251,24 @@ public class TessOCRAnalyzer {
 
 
     private Equation parseChemicalEquation() {
+
         String raw = tessBaseAPI.getUTF8Text();
-        Equation chemeq = new Equation();
+        Equation chemeq = new Equation(Equation.Type.CHEM);
         chemeq.setRawDetection(raw);
         int pos = 0;
         String endCharacter = null;
         // leftside
         do {
+
             List<Compound> possibleCompounds = parseCompound(State.START, pos, new Compound());
+
+            Instant now = Instant.now();
+            long duration = Duration.between(parseStart, now).toMillis();
+            if (duration > 200) {
+                LOGGER.i("TIME OUT!");
+                return chemeq;
+            }
+
             chemeq.addLeftPossibleCompounds(possibleCompounds);
             Compound resultCompound = possibleCompounds.get(0);
             for (Compound compound : possibleCompounds) {
@@ -540,6 +292,14 @@ public class TessOCRAnalyzer {
         // right side
         do {
             List<Compound> possibleCompounds = parseCompound(State.START, pos, new Compound());
+
+            Instant now = Instant.now();
+            long duration = Duration.between(parseStart, now).toMillis();
+            if (duration > 200) {
+                LOGGER.i("TIME OUT!");
+                return chemeq;
+            }
+
             chemeq.addRightPossibleCompounds(possibleCompounds);
             Compound resultCompound = possibleCompounds.get(0);
             for (Compound compound : possibleCompounds) {
@@ -565,7 +325,16 @@ public class TessOCRAnalyzer {
      * @param compound
      */
     private List<Compound> parseCompound(State state, int pos, Compound compound) {
+
         List<Compound> possibleCompounds = new ArrayList<>();
+
+        Instant now = Instant.now();
+        long duration = Duration.between(parseStart, now).toMillis();
+        if (duration > 200) {
+            return possibleCompounds;
+        }
+
+        // if reached end, return
         if (pos == allChoices.size()){
             if (state == State.ELEM || state == State.IDX){
                 compound.setParsed(true);
@@ -702,6 +471,8 @@ public class TessOCRAnalyzer {
         // if there are some successfully parsed compounds return
         // else try to leave out character on this position
         if (possibleCompounds.size() != 0) return possibleCompounds;
+
+        LOGGER.i("LEAVING OUT CHARACTER AT POSITION " + pos);
         return parseCompound(state, pos+1, compound);
     }
 

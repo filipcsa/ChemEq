@@ -57,7 +57,7 @@ public class TFLiteYoloDetectionAPI implements Classifier {
     // TODO recalculate anchors!
     private final static double anchors[] = {162,22, 204,25, 249,27, 304,27, 374,27};
     //{1.08,1.19,  3.42,4.41,  6.63,11.38,  9.42,5.11,  16.62,10.52};
-    private static final double MIN_CONFIDENCE = 0.2;
+    private static final double MIN_CONFIDENCE = 0.25;
 
     private Interpreter tfLite;
 

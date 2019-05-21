@@ -117,7 +117,7 @@ public class RecognitionListItem {
     }
 
     /** vycisleni rovnice na rychlo aby se nereklo ze to nemam lol**/
-    // TODO make it more efficient somehow
+    // TODO remake for Equation
     private void balanceEquation() {
         Map<String, Integer> totalLeft = new HashMap<>();
         Map<String, Integer> totalRight = new HashMap<>();

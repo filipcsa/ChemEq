@@ -80,7 +80,7 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
     //
     private boolean debug = false;
     private static final boolean MAINTAIN_ASPECT = false;
-    private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.f;
+    private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.f; // the limit is set in TFLiteYOLODetectionAPI
     private Integer sensorOrientation;
     private static final float TEXT_SIZE_DIP = 10;
     private BorderedText borderedText;
