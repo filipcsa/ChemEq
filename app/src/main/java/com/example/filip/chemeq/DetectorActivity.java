@@ -306,25 +306,30 @@ public class DetectorActivity extends AppCompatActivity {
             // the top rank should grow (left -)
             while (average < -180000) {
                 location.left -= 2;
+                if (location.left < 0) break;
                 pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
                 average = average(pixels);
             }
             while (average > -180000) {
                 location.left += 1;
+                if (location.left >= location.right) break;
                 pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.left, (int)location.top, 1, size);
                 average = average(pixels);
             }
 
             // THE LOWER PART WHICH IS THE RIGHT BEFORE ROTATING
+            if (location.right >= threshImage.getWidth()) location.right = threshImage.getWidth()-1;
             pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.right, (int)location.top, 1, size);
             average = average(pixels);
             while (average < -200000) {
                 location.right += 2;
+                if (location.right >= threshImage.getWidth()) break;
                 pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.right, (int)location.top, 1, size);
                 average = average(pixels);
             }
             while (average > -200000) {
                 location.right -= 1;
+                if (location.right <= location.left) break;
                 pixels = BitmapHelper.getBitmapPixels(threshImage, (int)location.right, (int)location.top, 1, size);
                 average = average(pixels);
             }
