@@ -1,7 +1,9 @@
 package com.example.filip.chemeq.model;
 
+import com.example.filip.chemeq.service.ChemBase;
 import com.example.filip.chemeq.util.Logger;
 
+import org.apache.commons.math3.fraction.Fraction;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.ops.CommonOps;
 import org.ejml.simple.SimpleMatrix;
@@ -39,6 +41,19 @@ public class Equation {
     private char op;
 
     // CHEM
+
+    public enum Balance{
+        BALANCED,
+        BALANCABLE, // if its possible to balance but i am not able to
+        UNBALANCED // 4 now same as not balancable
+    }
+
+    private Balance balance;
+
+    public Balance getBalance() {
+        return balance;
+    }
+
     private String rawDetection = "";
 
     private List<Compound> leftCompounds = new ArrayList<>();
@@ -137,8 +152,62 @@ public class Equation {
         return op;
     }
 
+    // TODO finish this also for math eq aaaa
+    // i cant take this anymore
     public void equationEditedCallback(String newEq) {
+        leftCompounds.clear();
+        rightCompounds.clear();
+        // chem eq
+        LOGGER.i("EQUATION EDITED, NEW EQUATION: " + newEq);
+        String eq = newEq.replace(" ", "");
+        String[] split = eq.split("→");
+        if (split.length == 1)
+            split = eq.split("=");
+        String[] leftComps = split[0].split("\\+");
 
+        for (String leftComp : leftComps) {
+            Compound compound = new Compound();
+            leftComp = makeFormulaGreatAgain(leftComp);
+            compound.setCompound(leftComp);
+            compound.setTrivName(ChemBase.getNameOfFormula(leftComp));
+            leftCompounds.add(compound);
+        }
+
+        if (split.length == 1)
+            return;
+
+        String[] rightComps = split[1].split("\\+");
+        for (String rightComp : rightComps) {
+            Compound compound = new Compound();
+            rightComp = makeFormulaGreatAgain(rightComp);
+            compound.setCompound(rightComp);
+            compound.setTrivName(ChemBase.getNameOfFormula(rightComp));
+            rightCompounds.add(compound);
+        }
+
+        balanceEquation();
+    }
+
+    /**
+     * Replaces number with indexes
+    */
+    private String makeFormulaGreatAgain(String comp) {
+        StringBuilder formula = new StringBuilder(comp);
+        boolean beggining = true;
+        for (int i = 0; i < formula.length(); i++) {
+            String c = formula.substring(i, i+1);
+            // change integer to index
+            if (!beggining && isStringInteger(c)) {
+                char num = c.charAt(0);
+                int number = num - '0';
+                char idx = (char)('₀' + number);
+                formula.setCharAt(i, idx);
+            }
+            if (beggining && !isStringInteger(c))
+                beggining = false;
+        }
+
+        return formula.toString();
     }
 
 
@@ -163,7 +232,6 @@ public class Equation {
             Map<String, Integer> leftCounts = new HashMap<>();
             while (i < component.length()) {
                 // number in beginning
-                // TODO
                 if (isStringInteger(component.substring(i, i+1))){
                     if (c == 1) c = Integer.parseInt(component.substring(0, 1));
                     else
@@ -216,9 +284,11 @@ public class Equation {
                     element = component.substring(i, i+1);
                 }
 
-                if (i+1 < component.length() && isStringIndex(component.substring(i+1, i+2))) {
+                boolean first = true;
+                while (i+1 < component.length() && isStringIndex(component.substring(i+1, i+2))) {
                     char idx = component.substring(i+1, i+2).charAt(0);
-                    number = idx - '₀';
+                    if(first){ number = idx - '₀'; first=false;}
+                    else number = number*10 + (idx - '₀');
                     i += 1;
                 }
                 number *= c;
@@ -254,6 +324,8 @@ public class Equation {
             int i = 0;
             int c = 1;
             Map<String, Integer> rightCounts = new HashMap<>();
+
+            // nekde tady nakej problem asi
             while (i < component.length()) {
                 if (isStringInteger(component.substring(i, i+1))){
                     if (c == 1) c = Integer.parseInt(component.substring(0, 1));
@@ -306,9 +378,12 @@ public class Equation {
                     element = component.substring(i, i+1);
                 }
 
-                if (i+1 < component.length() && isStringIndex(component.substring(i+1, i+2))) {
+                boolean first = true;
+                while (i+1 < component.length() && isStringIndex(component.substring(i+1, i+2))) {
                     char idx = component.substring(i+1, i+2).charAt(0);
-                    number = idx - '₀';
+                    if (first) {number = idx - '₀'; first = false;}
+                    else
+                        number = number*10 + (idx - '₀');
                     i += 1;
                 }
                 number *= c;
@@ -342,10 +417,12 @@ public class Equation {
         int balanceIdx = isEquationBalancable(totalLeft, totalRight);
         if (balanceIdx == 2) {
             LOGGER.i("Equation balanced!!!");
+            balance = Balance.BALANCED;
             return;
         }
         if (balanceIdx == 0){
             LOGGER.i("Not balancable");
+            balance = Balance.UNBALANCED;
             return;
         }
 
@@ -386,6 +463,7 @@ public class Equation {
         }
 
         // TODO kontrolovat, zda to vůbec můžu provádět, zda je pocet neznamych dost
+        balance = Balance.BALANCED;
 
         SimpleMatrix sm = new SimpleMatrix(data);
         LOGGER.i("EQUATION MATRIX " + sm.toString());
@@ -394,12 +472,13 @@ public class Equation {
 
         List<Double> orderedCoefs = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
+            // na tohle sem malem zapomnel, pak by byly casty nuly
             orderedCoefs.add(red.get(i, cols-1));
         }
         orderedCoefs.add(red.get(0, 0));
 
 
-        List<Fraction> fractions = orderedCoefs.stream().map(d -> new Fraction(round(Math.abs(d), 3)))
+        List<Fraction> fractions = orderedCoefs.stream().map(d -> new Fraction(Math.abs(d)))
                 .collect(Collectors.toList());
         for (Fraction f : fractions) {
             LOGGER.i(f.toString());
@@ -407,6 +486,12 @@ public class Equation {
         List<Integer> finalCoefs = fractions2IntsWithLCM(fractions);
         for (Integer i : finalCoefs) {
             LOGGER.i(i.toString());
+        }
+
+        finalCoefs = finalCoefs.stream().filter(x -> x != 0).collect(Collectors.toList());
+        if (finalCoefs.size() != cols) {
+            balance = Balance.BALANCABLE;
+            return;
         }
 
         // TODO get the number in beginning if there is and multiply it by the coef
@@ -425,6 +510,7 @@ public class Equation {
         }
     }
 
+    /*
     public static double round(double value, int places) {
         if (places < 0) throw new IllegalArgumentException();
 
@@ -433,6 +519,7 @@ public class Equation {
         long tmp = Math.round(value);
         return (double) tmp / factor;
     }
+    */
 
     /* 0 no 1 yes 2 is balanced*/
     private int isEquationBalancable(Map<String, Integer> left, Map<String, Integer> right) {
@@ -468,6 +555,7 @@ public class Equation {
         return false;
     }
 
+    /*
     private class Fraction {
         // terminator
         int num, denom;
@@ -490,6 +578,17 @@ public class Equation {
             int gcd = _gcd.intValue();
             this.num = num / gcd;
             this.denom = denom / gcd;
+
+            // a ted prasarna, nedomyslel sem zaokrouhleni :/
+            if (d == 0.333){
+                this.num = 1; this.denom = 3;
+            }
+            if (d == 0.666){
+                this.num = 2; this.denom = 3;
+            }
+            if (d == 0.999) {
+                this.num = 1; this.denom = 1;
+            }
         }
 
         public String toString() {
@@ -497,12 +596,15 @@ public class Equation {
         }
 
     }
+    */
+
+
 
     // need to find the lcm of fractions
     private List<Integer> fractions2IntsWithLCM(List<Fraction> fractions) {
-        List<Integer> denoms = fractions.stream().map(f -> f.denom).collect(Collectors.toList());
+        List<Integer> denoms = fractions.stream().map(f -> f.getDenominator()).collect(Collectors.toList());
         int lcm = lcm(denoms);
-        return fractions.stream().map(f -> (f.num*lcm)/f.denom).collect(Collectors.toList());
+        return fractions.stream().map(f -> (f.getNumerator()*lcm)/f.getDenominator()).collect(Collectors.toList());
     }
 
     // Euclid

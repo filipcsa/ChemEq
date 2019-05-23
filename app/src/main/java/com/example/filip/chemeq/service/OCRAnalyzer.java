@@ -31,7 +31,7 @@ public class OCRAnalyzer {
     private String[] elements_arr = {"H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Tm", "Yb", "Lu", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr"};
     private List<String> elements = new ArrayList<String>(Arrays.asList(elements_arr));
 
-    private String[] index_arr = {"₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"};
+    private String[] index_arr = {"₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"};
     private List<String> indexes = new ArrayList<>(Arrays.asList(index_arr));
 
 
@@ -306,6 +306,7 @@ public class OCRAnalyzer {
             endCharacter = resultCompound.getEndCharacter();
         } while (endCharacter.equals("+"));
 
+        LOGGER.i("Final eq: " + chemeq.getFullEquation());
         chemeq.balanceEquation();
         return chemeq;
     }

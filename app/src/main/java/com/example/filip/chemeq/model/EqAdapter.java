@@ -1,6 +1,7 @@
 package com.example.filip.chemeq.model;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.view.GestureDetector;
@@ -40,11 +41,11 @@ public class EqAdapter extends ArrayAdapter<EqListItem> {
         if (listItem == null)
             listItem = LayoutInflater.from(context).inflate(R.layout.recognition_list_item, parent, false);
 
-        EqListItem currentRecognition = recognitionList.get(position);
+        EqListItem currentEqListItem = recognitionList.get(position);
 
         /*
         TextView textView = listItem.findViewById(R.id.rowTextView);
-        textView.setText(currentRecognition.getEquation());
+        textView.setText(currentEqListItem.getEquation());
         */
 
 
@@ -56,28 +57,38 @@ public class EqAdapter extends ArrayAdapter<EqListItem> {
         formulaNamesRow.removeAllViews();
         formulasRow.removeAllViews();
 
-        if (currentRecognition.getEquationTest() == null)
+        // no recognition
+        if (currentEqListItem.getEquationTest() == null)
             return listItem;
 
-        if (currentRecognition.getEquationTest().getEquationType() == Equation.Type.MATH) {
+        // is math
+        if (currentEqListItem.getEquationTest().getEquationType() == Equation.Type.MATH) {
             TextView a = initializeTextView();
             int result = 0;
-            if (currentRecognition.getEquationTest().getOp() == '+')
-                result = currentRecognition.getEquationTest().getA() + currentRecognition.getEquationTest().getB();
-            if (currentRecognition.getEquationTest().getOp() == '-')
-                result = currentRecognition.getEquationTest().getA() - currentRecognition.getEquationTest().getB();
-            if (currentRecognition.getEquationTest().getOp() == '×')
-                result = currentRecognition.getEquationTest().getA() * currentRecognition.getEquationTest().getB();
-            if (currentRecognition.getEquationTest().getOp() == '÷')
-                result = currentRecognition.getEquationTest().getA() / currentRecognition.getEquationTest().getB();
-            String matheq = (currentRecognition.getEquationTest().getA() + " " + currentRecognition.getEquationTest().getOp() + " " + currentRecognition.getEquationTest().getB() + " = " + result);
+            if (currentEqListItem.getEquationTest().getOp() == '+')
+                result = currentEqListItem.getEquationTest().getA() + currentEqListItem.getEquationTest().getB();
+            if (currentEqListItem.getEquationTest().getOp() == '-')
+                result = currentEqListItem.getEquationTest().getA() - currentEqListItem.getEquationTest().getB();
+            if (currentEqListItem.getEquationTest().getOp() == '×')
+                result = currentEqListItem.getEquationTest().getA() * currentEqListItem.getEquationTest().getB();
+            if (currentEqListItem.getEquationTest().getOp() == '÷')
+                result = currentEqListItem.getEquationTest().getA() / currentEqListItem.getEquationTest().getB();
+            String matheq = (currentEqListItem.getEquationTest().getA() + " " + currentEqListItem.getEquationTest().getOp() + " " + currentEqListItem.getEquationTest().getB() + " = " + result);
             a.setText(matheq);
             formulasRow.addView(a);
             return listItem;
         }
 
+        // is chem
+        if (currentEqListItem.getEquationTest().getBalance() == Equation.Balance.BALANCED)
+            listItem.setBackgroundColor(Color.GREEN);
+        else if (currentEqListItem.getEquationTest().getBalance() == Equation.Balance.BALANCABLE)
+            listItem.setBackgroundColor(Color.YELLOW);
+        else
+            listItem.setBackgroundColor(Color.RED);
+
         // the left side of the equation
-        Iterator<Compound> it = currentRecognition.getEquationTest().getLeftCompounds().iterator();
+        Iterator<Compound> it = currentEqListItem.getEquationTest().getLeftCompounds().iterator();
         while (it.hasNext()) {
             Compound compound = it.next();
             TextView formulaName = initializeTextView();
@@ -103,7 +114,7 @@ public class EqAdapter extends ArrayAdapter<EqListItem> {
         }
 
         // adding the equation arrow
-        if (currentRecognition.getEquationTest().getLeftCompounds().size() != 0) {
+        if (currentEqListItem.getEquationTest().getLeftCompounds().size() != 0) {
             TextView p1 = initializeTextView();
             TextView p2 = initializeTextView();
             p2.setTextSize(30);
@@ -116,7 +127,7 @@ public class EqAdapter extends ArrayAdapter<EqListItem> {
         }
 
         // the right side of the equation
-        it = currentRecognition.getEquationTest().getRightCompounds().iterator();
+        it = currentEqListItem.getEquationTest().getRightCompounds().iterator();
         while (it.hasNext()) {
             Compound compound = it.next();
             TextView formulaName = initializeTextView();
@@ -141,6 +152,7 @@ public class EqAdapter extends ArrayAdapter<EqListItem> {
             }
         }
 
+        // tohle asi neni nejlepsi ale funguje to haha
         table.setOnTouchListener(new View.OnTouchListener(){
             private GestureDetector gestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
                 @Override
@@ -154,7 +166,7 @@ public class EqAdapter extends ArrayAdapter<EqListItem> {
                 /** HANDLING THE DOUBLE TAP **/
                 private void onDoubleTapTableCallback() {
                     table.setVisibility(View.GONE);
-                    String eq = currentRecognition.getEquationTest().getFullEquation();
+                    String eq = currentEqListItem.getEquationTest().getFullEquation();
                     editText.setText(eq);
                     editText.setVisibility(View.VISIBLE);
                 }
@@ -186,6 +198,9 @@ public class EqAdapter extends ArrayAdapter<EqListItem> {
                     }
                     else {
                         LOGGER.i("Focus LOST");
+                        String eqString = editText.getText().toString();
+                        currentEqListItem.getEquationTest().equationEditedCallback(eqString);
+                        notifyDataSetChanged();
                         editText.setVisibility(View.GONE);
                         table.setVisibility(View.VISIBLE);
                     }

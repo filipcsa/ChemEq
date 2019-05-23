@@ -266,6 +266,7 @@ public class DetectorActivity extends AppCompatActivity {
             canvasToFrameMatrix.mapRect(location);
 
             // TODO finish the bottom part, run ocr after this, not before
+            // TODO osefovat aby to nechcipalo
             // try to locate a larger whitespace on left and right side
             // and only then locate the text
             // THE RIGHT PART WHICH IS THE TOP BEFORE ROTATING

@@ -20,9 +20,11 @@ import com.example.filip.chemeq.util.ImageUtils;
 import com.example.filip.chemeq.util.Logger;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.stream.Collectors;
 
 /**
  * A tracker wrapping ObjectTracker that also handles non-max suppression and matching existing
@@ -194,6 +196,7 @@ public class MultiBoxTracker {
           getFrameToCanvasMatrix().mapRect(trackedPos);
           ret.add(new Recognition(trackedPos));
       }
+      ret = orderRecognitionsByY(ret);
       return ret;
   }
 
@@ -469,5 +472,10 @@ public class MultiBoxTracker {
         }
       }
     }
+  }
+
+  private List<Recognition> orderRecognitionsByY(List<Recognition> results) {
+    return results.stream().sorted(Comparator.comparing(Recognition::getTop))
+            .collect(Collectors.toList());
   }
 }
