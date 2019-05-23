@@ -1,4 +1,4 @@
-package com.example.filip.chemeq.detecting;
+package com.example.filip.chemeq.view;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -9,22 +9,19 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.example.filip.chemeq.DetectorActivity;
-import com.example.filip.chemeq.Recognition;
+import com.example.filip.chemeq.model.AdjustableRect;
+import com.example.filip.chemeq.model.ColorBall;
+import com.example.filip.chemeq.model.Recognition;
 import com.example.filip.chemeq.util.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * DrawView class holds corner objects and handle them by drawing
- * overlay.
- *
- * Based on solution by Chintan Rathod (http://chintanrathod.com)
- */
-public class DrawView extends View {
-    private Logger LOGGER = new Logger(DrawView.class.getName());
 
-    private List<AdjustableRecognitionRect> rectangles = new ArrayList<>();
+public class RectDrawView extends View {
+    private Logger LOGGER = new Logger(RectDrawView.class.getName());
+
+    private List<AdjustableRect> rectangles = new ArrayList<>();
     private DetectorActivity da;
 
 
@@ -33,35 +30,18 @@ public class DrawView extends View {
     Paint paint;
     Canvas canvas;
 
-    /*
-    public DrawView(Context context, List<Recognition> recognitions) {
-        super(context);
-        paint = new Paint();
-        setFocusable(true); // necessary for getting the touch events
-        canvas = new Canvas();
-        this.da = (DetectorActivity) context;
-        for (Recognition recognition : recognitions) {
-            AdjustableRecognitionRect ar = new AdjustableRecognitionRect(context, recognition);
-            rectangles.add(ar);
-            ((DetectorActivity) context).runOCRForRectangle(ar.getLocation(), ar.getRecognitionListItem());
-            ((DetectorActivity) context).addRecognitionListItem(ar.getRecognitionListItem());
-        }
-
-    }
-    */
-
     public void initDrawView(Context context, List<Recognition> recognitions) {
         this.da = (DetectorActivity) context;
         for (Recognition recognition : recognitions) {
-            AdjustableRecognitionRect ar = new AdjustableRecognitionRect(context, recognition);
+            AdjustableRect ar = new AdjustableRect(context, recognition);
             rectangles.add(ar);
             // don't want to run ocr before adjusting the rectangles in detectorActivity
-            //((DetectorActivity) context).runOCRForRectangle(ar.getLocation(), ar.getRecognitionListItem());
-            ((DetectorActivity) context).addRecognitionListItem(ar.getRecognitionListItem());
+            //((DetectorActivity) context).runOCRForRectangle(ar.getLocation(), ar.getEqListItem());
+            ((DetectorActivity) context).addRecognitionListItem(ar.getEqListItem());
         }
     }
 
-    public DrawView(Context context) {
+    public RectDrawView(Context context) {
         super(context);
         paint = new Paint();
         setFocusable(true); // necessary for getting the touch events
@@ -69,11 +49,11 @@ public class DrawView extends View {
 
     }
 
-    public DrawView(Context context, AttributeSet attrs, int defStyle) {
+    public RectDrawView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
     }
 
-    public DrawView(Context context, AttributeSet attrs) {
+    public RectDrawView(Context context, AttributeSet attrs) {
         super(context, attrs);
         paint = new Paint();
         setFocusable(true); // necessary for getting the touch events
@@ -82,19 +62,19 @@ public class DrawView extends View {
 
     /** After add btn is clicked, adds a new rect to the drawView overlay **/
     public void createNewAdjustableRecognitionRect() {
-        AdjustableRecognitionRect rectangle = new AdjustableRecognitionRect(da);
+        AdjustableRect rectangle = new AdjustableRect(da);
         rectangles.add(rectangle);
-        da.addRecognitionListItem(rectangle.getRecognitionListItem());
+        da.addRecognitionListItem(rectangle.getEqListItem());
         // after adding a new rectangle it has to be drawn
         invalidate();
     }
 
     /** If there is a selected rect, remove it **/
     public void removeSelectedAdjustableRecognitionRect() {
-        for (AdjustableRecognitionRect rectangle : rectangles) {
+        for (AdjustableRect rectangle : rectangles) {
             if (!rectangle.isSelected()) continue;
             rectangles.remove(rectangle);
-            da.removeRecognitionListItem(rectangle.getRecognitionListItem());
+            da.removeRecognitionListItem(rectangle.getEqListItem());
             invalidate();
             break;
         }
@@ -107,33 +87,26 @@ public class DrawView extends View {
     // the method that draws the balls
     @Override
     protected void onDraw(Canvas canvas) {
-        // canvas.drawColor(0xFFCCCCCC); //if you want another background color
 
         paint.setAntiAlias(true);
         paint.setDither(true);
-        // no color for overlay
+
         paint.setColor(Color.parseColor("#00000000"));
         paint.setStyle(Paint.Style.FILL);
         paint.setStrokeJoin(Paint.Join.ROUND);
-        // mPaint.setStrokeCap(Paint.Cap.ROUND);
+
         paint.setStrokeWidth(5);
 
         canvas.drawPaint(paint);
-        for (AdjustableRecognitionRect rectangle : rectangles) {
+        for (AdjustableRect rectangle : rectangles) {
             if (rectangle.isSelected()) paint.setColor(Color.parseColor("#550000FF"));
             else paint.setColor(Color.parseColor("#55FFFFFF"));
             if (groupId == 1) {
-                /*
-                canvas.drawRect(point1.x + colorballs.get(0).getWidthOfBall() / 2,
-                        point3.y + colorballs.get(2).getWidthOfBall() / 2, point3.x + colorballs.get(2).getWidthOfBall() / 2, point1.y + colorballs.get(0).getWidthOfBall() / 2, paint);
-                        */
+
                 canvas.drawRect(rectangle.getPoint1().x,
                         rectangle.getPoint3().y, rectangle.getPoint3().x, rectangle.getPoint1().y, paint);
             } else {
-                /*
-                canvas.drawRect(point2.x + colorballs.get(1).getWidthOfBall() / 2,
-                        point4.y + colorballs.get(3).getWidthOfBall() / 2, point4.x + colorballs.get(3).getWidthOfBall() / 2, point2.y + colorballs.get(1).getWidthOfBall() / 2, paint);
-                        */
+
                 canvas.drawRect(rectangle.getPoint2().x,
                         rectangle.getPoint4().y, rectangle.getPoint4().x, rectangle.getPoint2().y, paint);
             }
@@ -148,7 +121,7 @@ public class DrawView extends View {
 
     private int prevX;
     private int prevY;
-    // events when touching the screen
+
     public boolean onTouchEvent(MotionEvent event) {
         int eventaction = event.getAction();
 
@@ -170,7 +143,7 @@ public class DrawView extends View {
                 balID = -1;
                 groupId = -1;
                 boolean isAlreadySelected = false;
-                for (AdjustableRecognitionRect rectangle : rectangles) {
+                for (AdjustableRect rectangle : rectangles) {
                     rectangle.setSelected(false);
                     for (ColorBall ball : rectangle.getColorballs()) {
                         // check if inside the bounds of the ball (circle)
@@ -210,7 +183,7 @@ public class DrawView extends View {
             case MotionEvent.ACTION_MOVE:
                 // touch drag with the ball
                 // move the balls the same as the finger
-                for (AdjustableRecognitionRect rectangle : rectangles) {
+                for (AdjustableRect rectangle : rectangles) {
                     if (!rectangle.isSelected())
                         continue;
                     //LOGGER.i("ALMOST MOVING THE BALL, BALL ID: " + balID);
@@ -246,11 +219,11 @@ public class DrawView extends View {
                 break;
 
             case MotionEvent.ACTION_UP:
-                for (AdjustableRecognitionRect rectangle : rectangles) {
+                for (AdjustableRect rectangle : rectangles) {
                     // LOGGING
                     if (rectangle.isSelected()) {
                         LOGGER.i("BALL RELEASED");
-                        da.runOCRForRectangle(rectangle.getLocation(), rectangle.getRecognitionListItem());
+                        da.runOCRForRectangle(rectangle.getLocation(), rectangle.getEqListItem());
                     }
                 }
                 break;
@@ -261,13 +234,13 @@ public class DrawView extends View {
     }
 
     public void runOCROnAllAdjustableRects() {
-        for (AdjustableRecognitionRect rect : rectangles) {
-            da.runOCRForRectangle(rect.getLocation(), rect.getRecognitionListItem());
+        for (AdjustableRect rect : rectangles) {
+            da.runOCRForRectangle(rect.getLocation(), rect.getEqListItem());
         }
     }
 
 
-    public List<AdjustableRecognitionRect> getAdjustableRecognitionRects() {
+    public List<AdjustableRect> getAdjustableRecognitionRects() {
         return rectangles;
     }
 }

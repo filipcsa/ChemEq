@@ -1,4 +1,4 @@
-package com.example.filip.chemeq;
+package com.example.filip.chemeq.view;
 
 import android.annotation.SuppressLint;
 import android.graphics.SurfaceTexture;
@@ -18,6 +18,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.example.filip.chemeq.R;
 import com.example.filip.chemeq.util.ImageUtils;
 import com.example.filip.chemeq.util.Logger;
 
@@ -28,26 +29,26 @@ import java.util.Comparator;
 import java.util.List;
 
 @SuppressLint("ValidFragment")
-public class LegacyCameraConnectionFragment extends Fragment {
+public class CameraFragment extends Fragment {
     private Camera camera;
-    private static final Logger LOGGER = new Logger(LegacyCameraConnectionFragment.class.getName());
+    private static final Logger LOGGER = new Logger(CameraFragment.class.getName());
     private Camera.PreviewCallback imageListener;
     private Size desiredSize;
 
     private int layout;
 
     //content
-    private AutoFitTextureView textureView;
+    private AutoFitTV textureView;
 
     // An additional thread for running tasks that shouldn't block the UI.
     private HandlerThread backgroundThread;
 
-    public LegacyCameraConnectionFragment () {
+    public CameraFragment() {
 
     }
 
-    public LegacyCameraConnectionFragment(final Camera.PreviewCallback imageListener,
-                                          final int layout, final Size desiredSize) {
+    public CameraFragment(final Camera.PreviewCallback imageListener,
+                          final int layout, final Size desiredSize) {
         this.imageListener = imageListener;
         this.layout = layout;
         this.desiredSize = desiredSize;
@@ -74,7 +75,7 @@ public class LegacyCameraConnectionFragment extends Fragment {
 
     @Override
     public void onViewCreated(final View view, final Bundle savedInstanceState) {
-        textureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        textureView = (AutoFitTV) view.findViewById(R.id.texture);
     }
 
     @Override

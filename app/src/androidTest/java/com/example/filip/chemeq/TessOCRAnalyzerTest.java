@@ -9,11 +9,10 @@ import android.os.Environment;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
-import com.example.filip.chemeq.detecting.ChemBase;
-import com.example.filip.chemeq.detecting.ChemicalEquation;
-import com.example.filip.chemeq.detecting.Compound;
-import com.example.filip.chemeq.detecting.Equation;
-import com.example.filip.chemeq.ocr.TessOCRAnalyzer;
+import com.example.filip.chemeq.service.ChemBase;
+import com.example.filip.chemeq.model.Compound;
+import com.example.filip.chemeq.model.Equation;
+import com.example.filip.chemeq.service.OCRAnalyzer;
 
 import org.json.JSONException;
 import org.junit.Before;
@@ -22,8 +21,6 @@ import org.junit.runner.RunWith;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -42,12 +39,12 @@ import static org.junit.Assert.assertEquals;
 public class TessOCRAnalyzerTest {
 
     Context testContext;
-    TessOCRAnalyzer t;
+    OCRAnalyzer t;
 
     @Before
     public void setUp() {
         testContext = InstrumentationRegistry.getInstrumentation().getContext();
-        t = new TessOCRAnalyzer(null, null);
+        t = new OCRAnalyzer(testContext);
 
         try {
             ChemBase.loadJSON(testContext);

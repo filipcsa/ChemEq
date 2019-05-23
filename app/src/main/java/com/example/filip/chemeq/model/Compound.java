@@ -1,4 +1,4 @@
-package com.example.filip.chemeq.detecting;
+package com.example.filip.chemeq.model;
 
 public class Compound {
     private double confidence;

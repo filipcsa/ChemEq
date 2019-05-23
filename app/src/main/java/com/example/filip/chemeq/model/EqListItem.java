@@ -1,4 +1,4 @@
-package com.example.filip.chemeq.detecting;
+package com.example.filip.chemeq.model;
 
 import android.util.Pair;
 
@@ -14,13 +14,13 @@ import org.ejml.data.DenseMatrix64F;
 import org.ejml.ops.CommonOps;
 import org.ejml.simple.SimpleMatrix;
 
-public class RecognitionListItem {
+public class EqListItem {
 
     private String[] elements_arr = {"H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Tm", "Yb", "Lu", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr"};
     private List<String> elements = new ArrayList<String>(Arrays.asList(elements_arr));
     private String[] index_arr = {"₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"};
     private List<String> indexes = new ArrayList<>(Arrays.asList(index_arr));
-    private static final Logger LOGGER = new Logger(RecognitionListItem.class.getName());
+    private static final Logger LOGGER = new Logger(EqListItem.class.getName());
 
     private Equation equationTest;
 
@@ -69,20 +69,6 @@ public class RecognitionListItem {
         this.rightSideCompounds = rightSideCompounds;
     }
 
-    /** this is the main setter, which is used to create valid list items **/
-    public void setAll(RecognitionListItem recognitionListItem) {
-
-        setEquation(recognitionListItem.getEquation());
-        setLeftSideCompounds(recognitionListItem.getLeftSideCompounds());
-        setRightSideCompounds(recognitionListItem.getRightSideCompounds());
-        setMath(recognitionListItem.isMath());
-        setOp(recognitionListItem.getOp());
-        setA(recognitionListItem.getA());
-        setB(recognitionListItem.getB());
-
-        if (!isMath())
-            balanceEquation();
-    }
 
     public boolean isMath() {
         return math;
@@ -317,8 +303,8 @@ public class RecognitionListItem {
             return;
         }
 
-        LOGGER.i("Total left: " + totalLeft.toString());
-        LOGGER.i("Total left size: " + totalLeft.size());
+        //LOGGER.i("Total left: " + totalLeft.toString());
+        //LOGGER.i("Total left size: " + totalLeft.size());
 
         int rows = totalLeft.size();
         int cols = leftDicts.size() + rightDicts.size();
@@ -357,79 +343,6 @@ public class RecognitionListItem {
         LOGGER.i("EQUATION MATRIX " + sm.toString());
         DenseMatrix64F red = CommonOps.rref(sm.getMatrix(), -1, null);
         LOGGER.i("REDUCED MATRIX: " + red.toString());
-
-        /*
-
-        List<Integer> leftCoef = new ArrayList<>();
-        List<Integer> rightCoef = new ArrayList<>();
-        Random r = new Random();
-        boolean balanced = false;
-        while (!balanced) {
-            totalLeft = new HashMap<>();
-            totalRight = new HashMap<>();
-            List<Map<String, Integer>> tempLeft = new ArrayList<>();
-            List<Map<String, Integer>> tempRight = new ArrayList<>();
-
-            for (Map<String, Integer> item : leftDicts) {
-                Map<String, Integer> newdict = new HashMap<>();
-                for (String key : item.keySet()) {
-                    newdict.put(key, item.get(key));
-                }
-                tempLeft.add(newdict);
-            }
-
-            for (Map<String, Integer> item : rightDicts) {
-                Map<String, Integer> newdict = new HashMap<>();
-                for (String key : item.keySet()) {
-                    newdict.put(key, item.get(key));
-                }
-                tempRight.add(newdict);
-            }
-
-            leftCoef = new ArrayList<>();
-            rightCoef = new ArrayList<>();
-            for (int i = 0; i < tempLeft.size(); i++) {
-                leftCoef.add(r.nextInt(2)+1);
-            }
-            for (int i = 0; i < tempRight.size(); i++) {
-                rightCoef.add(r.nextInt(2)+1);
-            }
-
-            for (int i = 0; i < leftCoef.size(); i++) {
-                for (String key : tempLeft.get(i).keySet()) {
-                    tempLeft.get(i).put(key, tempLeft.get(i).get(key)*leftCoef.get(i));
-                    if (!totalLeft.containsKey(key))
-                        totalLeft.put(key, tempLeft.get(i).get(key));
-                    else
-                        totalLeft.put(key, totalLeft.get(key) + tempLeft.get(i).get(key));
-                }
-            }
-
-            for (int i = 0; i < rightCoef.size(); i++) {
-                for (String key : tempRight.get(i).keySet()) {
-                    tempRight.get(i).put(key, tempRight.get(i).get(key)*rightCoef.get(i));
-                    if (!totalRight.containsKey(key))
-                        totalRight.put(key, tempRight.get(i).get(key));
-                    else
-                        totalRight.put(key, totalRight.get(key) + tempRight.get(i).get(key));
-                }
-            }
-
-            balanced = true;
-            for (String key : totalLeft.keySet()) {
-                if (totalLeft.get(key) != totalRight.get(key)) {
-                    balanced = false;
-                    break;
-                }
-            }
-        }
-
-        LOGGER.i(leftCoef.toString() + "     " + rightCoef.toString());
-
-        // pridat
-        */
-
-
     }
 
     /* 0 no 1 yes 2 is balanced*/

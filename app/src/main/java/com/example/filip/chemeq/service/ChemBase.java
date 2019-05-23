@@ -1,4 +1,4 @@
-package com.example.filip.chemeq.detecting;
+package com.example.filip.chemeq.service;
 
 import android.content.Context;
 import android.util.Log;
@@ -87,9 +87,5 @@ public class ChemBase {
             c = formula.charAt(numbersFromStart);
         }
         return formula.substring(numbersFromStart);
-    }
-
-    private static int levenstein(String a, String b){
-        return 0;
     }
 }

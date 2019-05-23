@@ -1,4 +1,4 @@
-package com.example.filip.chemeq;
+package com.example.filip.chemeq.service;
 
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.os.Trace;
 
+import com.example.filip.chemeq.model.Recognition;
 import com.example.filip.chemeq.util.BoundingBox;
 import com.example.filip.chemeq.util.Logger;
 
@@ -29,8 +30,8 @@ import java.util.stream.Collectors;
 /**
  * Wrapper for frozen detection models trained using the Tensorflow Object Detection API:
  */
-public class TFLiteYoloDetectionAPI implements Classifier {
-    private static final Logger LOGGER = new Logger(TFLiteYoloDetectionAPI.class.getName());
+public class YOLOClassifierImpl implements Classifier {
+    private static final Logger LOGGER = new Logger(YOLOClassifierImpl.class.getName());
 
     // Float model
     private static final float IMAGE_MEAN = 128.0f;
@@ -54,7 +55,7 @@ public class TFLiteYoloDetectionAPI implements Classifier {
     private static final int GRID_WIDTH = 13;
     private static final int GRID_HEIGHT = 13;
     private static final int NUM_BOXES_PER_CELL = 5;
-    // TODO recalculate anchors!
+    // anchors from yolo cfg
     private final static double anchors[] = {162,22, 204,25, 249,27, 304,27, 374,27};
     //{1.08,1.19,  3.42,4.41,  6.63,11.38,  9.42,5.11,  16.62,10.52};
     private static final double MIN_CONFIDENCE = 0.25;
@@ -83,7 +84,7 @@ public class TFLiteYoloDetectionAPI implements Classifier {
      */
     public static Classifier create(AssetManager assetManager, String modelFilename, String labelFilename,
                                     int inputSize, boolean isQuantized) throws IOException {
-        TFLiteYoloDetectionAPI d = new TFLiteYoloDetectionAPI();
+        YOLOClassifierImpl d = new YOLOClassifierImpl();
 
         InputStream labelsInput = assetManager.open(labelFilename);
         BufferedReader br = new BufferedReader(new InputStreamReader(labelsInput));
@@ -120,10 +121,8 @@ public class TFLiteYoloDetectionAPI implements Classifier {
         d.imgData.order(ByteOrder.nativeOrder());
         d.intValues = new int[d.inputSize * d.inputSize];
 
-        // TODO do something with NNAPI
         //d.tfLite.setUseNNAPI(true);
         //d.tfLite.setNumThreads(8);
-        // TODO count the last value dynamically for yolov2
         // 13 13 30
         d.output = new float[1][GRID_WIDTH][GRID_HEIGHT][35];
         return d;
@@ -170,6 +169,11 @@ public class TFLiteYoloDetectionAPI implements Classifier {
         return recognitions;
     }
 
+    /**
+     * Processing the output of YOLO with the anchors defined in cfg
+     * @param tfLiteOutput
+     * @return
+     */
     private List<BoundingBox> processOutput(float[][][][] tfLiteOutput) {
         float[][][] tensor = tfLiteOutput[0];
         float blockSize = 32f; // 416 / 13, the width of a cell
@@ -179,6 +183,7 @@ public class TFLiteYoloDetectionAPI implements Classifier {
         for (int cy = 0; cy < GRID_HEIGHT; cy++) {
             for (int cx = 0; cx < GRID_WIDTH; cx++) {
                 for (int b = 0; b < NUM_BOXES_PER_CELL; b++) {
+                    // pricti num classes k num_boxes
                     BoundingBox prediction = new BoundingBox();
                     prediction.setX((cx + sigmoid(tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 0])) * blockSize);
                     prediction.setY((cy + sigmoid(tensor[cy][cx][(NUM_BOXES_PER_CELL + 2) * b + 1])) * blockSize);

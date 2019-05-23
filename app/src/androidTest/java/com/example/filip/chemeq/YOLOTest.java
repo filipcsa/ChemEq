@@ -10,8 +10,10 @@ import android.media.MediaScannerConnection;
 import android.os.Environment;
 import android.support.test.InstrumentationRegistry;
 
-import com.example.filip.chemeq.detecting.AdjustableRecognitionRect;
-import com.example.filip.chemeq.tracking.MultiBoxTracker;
+import com.example.filip.chemeq.model.Recognition;
+import com.example.filip.chemeq.service.Classifier;
+import com.example.filip.chemeq.service.YOLOClassifierImpl;
+import com.example.filip.chemeq.service.MultiBoxTracker;
 import com.example.filip.chemeq.util.ImageUtils;
 
 import org.junit.Before;
@@ -50,7 +52,7 @@ public class YOLOTest {
     public void setUp() {
         testContext = InstrumentationRegistry.getInstrumentation().getContext();
         try {
-            detector = TFLiteYoloDetectionAPI.create(testContext.getAssets(), modelFilename,
+            detector = YOLOClassifierImpl.create(testContext.getAssets(), modelFilename,
                     labelFilename, inputSize, false);
         } catch (IOException e) {
             e.printStackTrace();

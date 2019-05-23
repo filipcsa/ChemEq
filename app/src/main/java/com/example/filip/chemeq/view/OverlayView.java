@@ -13,7 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-package com.example.filip.chemeq;
+package com.example.filip.chemeq.view;
+
 
 import android.content.Context;
 import android.graphics.Canvas;

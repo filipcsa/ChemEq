@@ -1,6 +1,6 @@
 package com.example.filip.chemeq;
 
-import com.example.filip.chemeq.detecting.Compound;
+import com.example.filip.chemeq.model.Compound;
 
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.example.filip.chemeq.detecting;
+package com.example.filip.chemeq.model;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -6,9 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Point;
 
 /**
- * ColorBall class used to store points of the screen.
- *
- * @author Chintan Rathod (http://chintanrathod.com)
+ * The corner of the adjustableRect
  */
 public class ColorBall {
 

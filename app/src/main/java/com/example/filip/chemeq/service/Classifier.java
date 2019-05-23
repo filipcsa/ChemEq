@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-package com.example.filip.chemeq;
+package com.example.filip.chemeq.service;
 
 import android.graphics.Bitmap;
-import android.graphics.RectF;
 
-import java.io.Serializable;
+import com.example.filip.chemeq.model.Recognition;
+
 import java.util.List;
 
 /**

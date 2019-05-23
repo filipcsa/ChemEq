@@ -1,25 +1,15 @@
-package com.example.filip.chemeq.ocr;
+package com.example.filip.chemeq.service;
 
+import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.graphics.RectF;
 import android.os.Environment;
 import android.util.Pair;
 
-import com.example.filip.chemeq.Recognition;
-import com.example.filip.chemeq.detecting.ChemBase;
-import com.example.filip.chemeq.detecting.ChemicalEquation;
-import com.example.filip.chemeq.detecting.Compound;
-import com.example.filip.chemeq.detecting.Equation;
-import com.example.filip.chemeq.detecting.RecognitionListItem;
+import com.example.filip.chemeq.model.Compound;
+import com.example.filip.chemeq.model.Equation;
 import com.example.filip.chemeq.util.Logger;
 import com.googlecode.tesseract.android.ResultIterator;
 import com.googlecode.tesseract.android.TessBaseAPI;
-
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
-import org.opencv.imgproc.Imgproc;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -27,13 +17,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class TessOCRAnalyzer {
+public class OCRAnalyzer {
 
 
-    private static final Logger LOGGER = new Logger(TessOCRAnalyzer.class.getName());
+    private static final Logger LOGGER = new Logger(OCRAnalyzer.class.getName());
     private TessBaseAPI tessBaseAPI;
     private final String lang = "chem";
-    private static final String DATA_PATH = Environment.getExternalStorageDirectory().toString() + "/Tess/" ;
+
+    // the traneddata file has to be placed into the external storage of the mobile into
+    // a folder named "tessdata" !
+    private String DATA_PATH = Environment.getExternalStorageDirectory().toString(); //+ "/Tess/" ;
 
     private String[] elements_arr = {"H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds", "Rg", "Cn", "Tm", "Yb", "Lu", "Th", "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm", "Md", "No", "Lr"};
     private List<String> elements = new ArrayList<String>(Arrays.asList(elements_arr));
@@ -41,13 +34,11 @@ public class TessOCRAnalyzer {
     private String[] index_arr = {"₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉"};
     private List<String> indexes = new ArrayList<>(Arrays.asList(index_arr));
 
-    private Matrix canvasToFrame;
-    private Matrix frameToCanvas = new Matrix();
-    private Matrix rotate;
 
 
 
-    public TessOCRAnalyzer(Bitmap image, Matrix canvasToFrame) {
+    public OCRAnalyzer(Context context) {
+
         // init tesseract
         tessBaseAPI = new TessBaseAPI();
         LOGGER.i("DATA_PATH: " + DATA_PATH);
@@ -126,7 +117,7 @@ public class TessOCRAnalyzer {
             }
             return;
         }
-        
+
         Instant now = Instant.now();
         long duration = Duration.between(parseStart, now).toMillis();
         if (duration > 100) {
@@ -315,6 +306,7 @@ public class TessOCRAnalyzer {
             endCharacter = resultCompound.getEndCharacter();
         } while (endCharacter.equals("+"));
 
+        chemeq.balanceEquation();
         return chemeq;
     }
 

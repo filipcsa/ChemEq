@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-package com.example.filip.chemeq.tracking;
+package com.example.filip.chemeq.service;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -36,6 +36,8 @@ import java.util.Vector;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
+ * From the TFLite demo app.
+ *
  * True object detector/tracker class that tracks objects across consecutive preview frames.
  * It provides a simplified Java interface to the analogous native object defined by
  * jni/client_vision/tracking/object_tracker.*.

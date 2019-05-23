@@ -1,4 +1,4 @@
-package com.example.filip.chemeq;
+package com.example.filip.chemeq.model;
 
 import android.graphics.RectF;
 

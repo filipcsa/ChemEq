@@ -1,29 +1,28 @@
-package com.example.filip.chemeq.detecting;
+package com.example.filip.chemeq.model;
 
 import android.content.Context;
 import android.graphics.Point;
 import android.graphics.RectF;
 
 import com.example.filip.chemeq.R;
-import com.example.filip.chemeq.Recognition;
 import com.example.filip.chemeq.util.Logger;
 
 import java.util.ArrayList;
 
-public class AdjustableRecognitionRect {
+public class AdjustableRect {
 
     Point point1, point3;
     Point point2, point4;
 
-    private RecognitionListItem recognitionListItem = new RecognitionListItem();
+    private EqListItem eqListItem = new EqListItem();
 
     int groupId = -1;
-    private ArrayList< ColorBall > colorballs = new ArrayList <> ();
+    private ArrayList<ColorBall> colorballs = new ArrayList <> ();
     private boolean selected = false;
 
-    private Logger LOGGER = new Logger(AdjustableRecognitionRect.class.getName());
+    private Logger LOGGER = new Logger(AdjustableRect.class.getName());
 
-    public AdjustableRecognitionRect(Context context, Recognition recognition) {
+    public AdjustableRect(Context context, Recognition recognition) {
         point1 = new Point();
         point1.x = (int) recognition.getLeft();
         point1.y = (int) recognition.getTop();
@@ -47,7 +46,7 @@ public class AdjustableRecognitionRect {
         colorballs.add(new ColorBall(context, R.drawable.gray_circle, point4, 3));
     }
 
-    public AdjustableRecognitionRect(Context context) {
+    public AdjustableRect(Context context) {
         point1 = new Point();
         point1.x = 300;
         point1.y = 300;
@@ -123,8 +122,8 @@ public class AdjustableRecognitionRect {
         this.selected = selected;
     }
 
-    public RecognitionListItem getRecognitionListItem() {
-        return recognitionListItem;
+    public EqListItem getEqListItem() {
+        return eqListItem;
     }
 
     public RectF getLocation() {

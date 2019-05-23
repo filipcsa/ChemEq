@@ -1,12 +1,7 @@
 package com.example.filip.chemeq.util;
 
-import com.example.filip.chemeq.CameraActivity;
-
 /**
- * Model to store the data of a bounding box
- *
- * Created by Zoltan Szabo on 12/17/17.
- * URL: https://github.com/szaza/android-yolo-v2
+ * YOLO Output class
  */
 public class BoundingBox {
     private Logger LOGGER = new Logger(BoundingBox.class.getName());

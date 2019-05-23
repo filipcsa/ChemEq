@@ -9,17 +9,17 @@ import android.os.Environment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 
-import com.example.filip.chemeq.detecting.AdjustableRecognitionRect;
-import com.example.filip.chemeq.detecting.Equation;
-import com.example.filip.chemeq.detecting.RecognitionAdapter;
-import com.example.filip.chemeq.detecting.RecognitionListItem;
-import com.example.filip.chemeq.ocr.TessOCRAnalyzer;
-import com.example.filip.chemeq.detecting.DrawView;
+import com.example.filip.chemeq.model.AdjustableRect;
+import com.example.filip.chemeq.model.EqListItem;
+import com.example.filip.chemeq.model.Equation;
+import com.example.filip.chemeq.model.EqAdapter;
+import com.example.filip.chemeq.model.Recognition;
+import com.example.filip.chemeq.service.OCRAnalyzer;
+import com.example.filip.chemeq.view.RectDrawView;
 import com.example.filip.chemeq.util.ImageUtils;
 import com.example.filip.chemeq.util.Logger;
 import com.example.filip.chemeq.util.PassImage;
@@ -40,11 +40,11 @@ public class DetectorActivity extends AppCompatActivity {
 
     private ImageView imageView;
     private Bitmap image;
-    private DrawView drawView;
+    private RectDrawView rectDrawView;
 
     private ListView listView;
-    private RecognitionAdapter listAdapter;
-    private List<RecognitionListItem> recognitionList = new ArrayList<>();
+    private EqAdapter listAdapter;
+    private List<EqListItem> recognitionList = new ArrayList<>();
 
     private List<Recognition> results;
     private Matrix canvasToFrameMatrix = new Matrix();
@@ -52,7 +52,7 @@ public class DetectorActivity extends AppCompatActivity {
 
     private final Logger LOGGER = new Logger(DetectorActivity.class.getName());
 
-    private TessOCRAnalyzer tessOCR;
+    private OCRAnalyzer tessOCR;
 
     private static final String path = Environment.getExternalStorageDirectory().toString() + "/dataset";
     private static int HIGHEST_FILENAME = getHighestFilename();
@@ -72,23 +72,23 @@ public class DetectorActivity extends AppCompatActivity {
         results = (List<Recognition>) getIntent().getSerializableExtra("results");
 
         // Create ArrayAdapter using the planet list
-        listAdapter = new RecognitionAdapter(this, recognitionList);
+        listAdapter = new EqAdapter(this, recognitionList);
         listView.setAdapter(listAdapter);
 
         frameToCanvasMatrix = ImageUtils.getFrameToCanvasMatrix();
         ImageUtils.getFrameToCanvasMatrix().invert(canvasToFrameMatrix);
 
-        tessOCR = new TessOCRAnalyzer(image, canvasToFrameMatrix);
+        tessOCR = new OCRAnalyzer(this);
 
         LOGGER.i("Detected results: " + results.size());
 
         // init the draw view with adjustable recognition rectangles
-        this.drawView = findViewById(R.id.drawView);
-        drawView.initDrawView(this, results);
+        this.rectDrawView = findViewById(R.id.drawView);
+        rectDrawView.initDrawView(this, results);
 
         // adjust rectangles and run ocr for the first time
         adjustResults();
-        drawView.runOCROnAllAdjustableRects();
+        rectDrawView.runOCROnAllAdjustableRects();
 
         // BUTTONS
         Button addBtn = findViewById(R.id.addButton);
@@ -109,13 +109,13 @@ public class DetectorActivity extends AppCompatActivity {
     /** On add rect button clicked **/
     private void onAddButton() {
         LOGGER.i("ADD BUTTON CLICKED");
-        drawView.createNewAdjustableRecognitionRect();
+        rectDrawView.createNewAdjustableRecognitionRect();
     }
 
     /** On remove rect button clicked if there is a selected rect **/
     private void onRemoveButton() {
         LOGGER.i("REMOVE BUTTON CLICKED");
-        drawView.removeSelectedAdjustableRecognitionRect();
+        rectDrawView.removeSelectedAdjustableRecognitionRect();
     }
 
     /** Saves the image as png and create data about rectangles for training / testing **/
@@ -175,8 +175,8 @@ public class DetectorActivity extends AppCompatActivity {
         String data = "";
         Matrix rotateMatrix = new Matrix();
         rotateMatrix.postRotate(90);
-        List<AdjustableRecognitionRect> adjustableRects = drawView.getAdjustableRecognitionRects();
-        for (AdjustableRecognitionRect ar : adjustableRects) {
+        List<AdjustableRect> adjustableRects = rectDrawView.getAdjustableRecognitionRects();
+        for (AdjustableRect ar : adjustableRects) {
             RectF rect = ar.getLocation();
             canvasToFrameMatrix.mapRect(rect);
             rotateMatrix.mapRect(rect);
@@ -197,18 +197,18 @@ public class DetectorActivity extends AppCompatActivity {
     }
 
 
-    public void addRecognitionListItem(RecognitionListItem recognitionListItem) {
-        this.recognitionList.add(recognitionListItem);
+    public void addRecognitionListItem(EqListItem eqListItem) {
+        this.recognitionList.add(eqListItem);
         listAdapter.notifyDataSetChanged();
     }
 
-    public void removeRecognitionListItem(RecognitionListItem recognitionListItem) {
-        this.recognitionList.remove(recognitionListItem);
+    public void removeRecognitionListItem(EqListItem eqListItem) {
+        this.recognitionList.remove(eqListItem);
         listAdapter.notifyDataSetChanged();
     }
 
     /** Gonna be called when the adjustable rectangle is adjusted */
-    public void runOCRForRectangle(RectF rect, RecognitionListItem recognitionListItem) {
+    public void runOCRForRectangle(RectF rect, EqListItem eqListItem) {
         canvasToFrameMatrix.mapRect(rect);
         Bitmap croppedResult = null;
         try {
@@ -218,11 +218,11 @@ public class DetectorActivity extends AppCompatActivity {
             LOGGER.e(e, "Wrong coordinates of rectangle");
             return;
         }
-        // RecognitionListItem rli = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
+        // EqListItem rli = tessOCR.doOCRonSingleExample(rotateBitmap(croppedResult));
         // tessOCR.doOCR4Rectangle(newRect);
         Equation equation = tessOCR.testOCR(rotateBitmap(croppedResult));
-        recognitionListItem.setEquationTest(equation);
-        // recognitionListItem.setAll(rli);
+        eqListItem.setEquationTest(equation);
+        // eqListItem.setAll(rli);
         listAdapter.notifyDataSetChanged();
         LOGGER.i("There are " + listAdapter.getCount() + " in list adapter");
     }
@@ -259,9 +259,9 @@ public class DetectorActivity extends AppCompatActivity {
                 Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 131, 24);
         Utils.matToBitmap(imageMat, threshImage);
 
-        List<AdjustableRecognitionRect> rects = drawView.getAdjustableRecognitionRects();
+        List<AdjustableRect> rects = rectDrawView.getAdjustableRecognitionRects();
 
-        for (AdjustableRecognitionRect rect : rects) {
+        for (AdjustableRect rect : rects) {
             RectF location = rect.getLocation();
             canvasToFrameMatrix.mapRect(location);
 

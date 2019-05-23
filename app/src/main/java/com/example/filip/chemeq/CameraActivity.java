@@ -26,13 +26,18 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.example.filip.chemeq.detecting.ChemBase;
-import com.example.filip.chemeq.tracking.MultiBoxTracker;
+import com.example.filip.chemeq.service.ChemBase;
+import com.example.filip.chemeq.model.Recognition;
+import com.example.filip.chemeq.service.Classifier;
+import com.example.filip.chemeq.service.YOLOClassifierImpl;
+import com.example.filip.chemeq.service.MultiBoxTracker;
 import com.example.filip.chemeq.util.BorderedText;
 import com.example.filip.chemeq.util.ImageUtils;
 import com.example.filip.chemeq.util.Logger;
 import com.example.filip.chemeq.util.PassImage;
 import com.example.filip.chemeq.util.ThreadUtils;
+import com.example.filip.chemeq.view.CameraFragment;
+import com.example.filip.chemeq.view.OverlayView;
 
 import org.json.JSONException;
 
@@ -43,6 +48,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
+/**
+ * Based on TFLite demo app.
+ */
 public class CameraActivity extends AppCompatActivity implements Camera.PreviewCallback {
 
     private final Logger LOGGER = new Logger(CameraActivity.class.getName());
@@ -183,7 +191,7 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
         //TODO add fragment layout
         LOGGER.d("Setting fragment");
         int layout = R.layout.camera_connection_fragment;
-        Fragment fragment = new LegacyCameraConnectionFragment(this,
+        Fragment fragment = new CameraFragment(this,
                 layout, DESIRED_PREVIEW_SIZE);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.upper, fragment).commit();
@@ -374,7 +382,7 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
 
         try {
             detector =
-                    TFLiteYoloDetectionAPI.create(
+                    YOLOClassifierImpl.create(
                             getAssets(),
                             TF_OD_API_MODEL_FILE,
                             TF_OD_API_LABELS_FILE,
@@ -527,10 +535,10 @@ public class CameraActivity extends AppCompatActivity implements Camera.PreviewC
                         final List<Recognition> mappedRecognitions =
                                 new LinkedList<Recognition>();
 
+                        // THE DEBUG CANVAS
                         for (final Recognition result : results) {
                             final RectF location = result.getLocation();
                             if (location != null && result.getConfidence() >= minimumConfidence) {
-                                //what is this for??
                                 canvas.drawRect(location, paint);
                                 cropToFrameTransform.mapRect(location);
                                 result.setLocation(location);

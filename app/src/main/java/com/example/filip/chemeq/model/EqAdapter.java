@@ -1,9 +1,8 @@
-package com.example.filip.chemeq.detecting;
+package com.example.filip.chemeq.model;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -22,13 +21,13 @@ import com.example.filip.chemeq.util.Logger;
 import java.util.Iterator;
 import java.util.List;
 
-public class RecognitionAdapter extends ArrayAdapter<RecognitionListItem> {
+public class EqAdapter extends ArrayAdapter<EqListItem> {
 
     private Context context;
-    private List<RecognitionListItem> recognitionList;
-    private static final Logger LOGGER = new Logger(RecognitionAdapter.class.getName());
+    private List<EqListItem> recognitionList;
+    private static final Logger LOGGER = new Logger(EqAdapter.class.getName());
 
-    public RecognitionAdapter(Context context, List<RecognitionListItem> list) {
+    public EqAdapter(Context context, List<EqListItem> list) {
         super(context, 0, list);
         this.context = context;
         recognitionList = list;
@@ -41,7 +40,7 @@ public class RecognitionAdapter extends ArrayAdapter<RecognitionListItem> {
         if (listItem == null)
             listItem = LayoutInflater.from(context).inflate(R.layout.recognition_list_item, parent, false);
 
-        RecognitionListItem currentRecognition = recognitionList.get(position);
+        EqListItem currentRecognition = recognitionList.get(position);
 
         /*
         TextView textView = listItem.findViewById(R.id.rowTextView);
@@ -57,6 +56,8 @@ public class RecognitionAdapter extends ArrayAdapter<RecognitionListItem> {
         formulaNamesRow.removeAllViews();
         formulasRow.removeAllViews();
 
+        if (currentRecognition.getEquationTest() == null)
+            return listItem;
 
         if (currentRecognition.getEquationTest().getEquationType() == Equation.Type.MATH) {
             TextView a = initializeTextView();

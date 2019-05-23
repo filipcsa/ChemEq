@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
-        <com.example.filip.chemeq.detecting.DrawView
+        <com.example.filip.chemeq.view.RectDrawView
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:id="@+id/drawView"

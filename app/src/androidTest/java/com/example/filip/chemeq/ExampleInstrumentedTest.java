@@ -3,9 +3,8 @@ package com.example.filip.chemeq;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
-import android.util.Log;
 
-import com.example.filip.chemeq.detecting.ChemBase;
+import com.example.filip.chemeq.service.ChemBase;
 
 import org.json.JSONException;
 import org.junit.Before;
@@ -15,7 +14,6 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
 
